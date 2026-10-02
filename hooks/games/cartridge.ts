@@ -51,6 +51,30 @@ export type InitContext = {
   rom?: Uint8Array
   /** A display name for the ROM (its file name). */
   romName?: string
+  /** How to run the ROM, when its metadata says (bundled ROMs carry this). */
+  romOptions?: RomOptions
+}
+
+/** CHIP-8 interpreter settings, named after Octo's quirk flags. */
+export type RomOptions = {
+  /** Instructions per 60 Hz frame. */
+  tickrate?: number
+  quirks?: Partial<Chip8Quirks>
+}
+
+export type Chip8Quirks = {
+  /** 8XY6/8XYE shift VX in place, ignoring VY. */
+  shift: boolean
+  /** FX55/FX65 leave I unchanged. */
+  loadStore: boolean
+  /** Sprites clip at the screen edge instead of wrapping. */
+  clip: boolean
+  /** BNNN jumps to NNN + VX (X = high nibble of NNN) instead of NNN + V0. */
+  jump: boolean
+  /** 8XY1/8XY2/8XY3 reset VF to 0. */
+  logic: boolean
+  /** Arithmetic writes the flag to VF before the result (matters when X is F). */
+  vfOrder: boolean
 }
 
 /**
@@ -90,7 +114,8 @@ export interface Cartridge<S> {
   init(ctx: InitContext): S
   /** Handle one key. The harness keeps `p` (pause) and `backspace` (menu) for itself. */
   key(state: S, key: Key): void
-  tick?(state: S): void
+  /** Advance one step. Return `false` when nothing visible changed (the harness skips the redraw). */
+  tick?(state: S): boolean | void
   view(state: S, size: Size): Frame
   /** A request the cartridge is waiting on the host for, if any. */
   pendingRequest?(state: S): HostRequest | undefined
