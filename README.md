@@ -1,117 +1,171 @@
-# Claude Arcade
+# Pane Arcade 🕹️
 
-A [Claude Code mod](https://claude.dev) that opens a game pane while Claude works:
+**Play games in a pane while Claude Code works.** Snake, Minesweeper, 2048, chess against Stockfish, and a
+CHIP-8 emulator with a dozen public-domain games built in, plus any CHIP-8 ROM you bring.
 
-- **Snake**
-- **Minesweeper** (Beginner, Intermediate and Expert boards)
-- **2048**
-- **Chess** against [Stockfish](https://stockfishchess.org) at five strengths, against a small built-in
-  engine when Stockfish is not installed, or against a friend at the same keyboard
-- **CHIP-8**: a CHIP-8 interpreter with 12 public-domain games bundled, plus any `.ch8` ROM you supply
+<!-- Demo GIF goes here: ![Pane Arcade demo](docs/demo.gif) -->
 
-The header shows whether Claude is still working or waiting for you, and a toast tells you when it finishes.
+Pane Arcade is a [Claude Code mod](https://claude.dev): a plugin that adds a docked game pane to Claude Code.
+Kick off a long task, type `/arcade`, and play until Claude needs you. The pane's header shows
+**● Claude is working** while it works, flips to **◆ Claude is waiting for you** when it's done, and a toast
+lets you know.
+
+| | |
+| --- | --- |
+| 🐍 **Snake** | The classic. Speeds up as you grow. |
+| 💣 **Minesweeper** | Beginner, Intermediate and Expert boards. Click to reveal, right-click to flag. |
+| 🔢 **2048** | Drag or use the arrow keys to slide; undo one move. |
+| ♟️ **Chess** | Click or drag pieces. Plays [Stockfish](https://stockfishchess.org) at five strengths, falls back to a built-in engine, or two players at one keyboard. |
+| 👾 **CHIP-8** | A full CHIP-8 interpreter with 12 public-domain games (Breakout, Pong, a runner, a cave explorer, ...), on-screen buttons, and each game's own colours. Load your own ROMs too. |
 
 ## Install
 
+You need Claude Code with mod support (built and tested on v2.1.287).
+
+In Claude Code, run:
+
 ```text
-/plugin marketplace add <this repo's GitHub URL or local path>
-/plugin install arcade@claude-arcade
+/plugin marketplace add thefotes/pane-arcade
+/plugin install arcade@pane-arcade
 ```
 
-or, for a single session from a checkout: `claude --plugin-dir /path/to/claude-arcade`.
+Then switch on the **fullscreen renderer** so the arcade can use your mouse and arrow keys (it restarts and
+resumes your session; you only do this once):
 
-For chess against Stockfish, install it so it is on your `PATH` (`brew install stockfish`, `apt install stockfish`,
-...). Without it, chess falls back to the built-in engine and tells you so.
+```text
+/tui fullscreen
+```
+
+**Optional, for chess:** install Stockfish so it's on your `PATH`:
+
+```sh
+brew install stockfish          # macOS
+sudo apt install stockfish      # Debian / Ubuntu
+```
+
+Without it, chess still works against the built-in engine and says so.
+
+> **Mods run with the same access to your machine as Claude Code.** Read a mod before you install it. This one
+> reads CHIP-8 ROMs (its own, `~/.claude/arcade/roms/`, and files you `/arcade load`) and runs `stockfish` if you
+> have it, and nothing else: no network, no other files. It's all in [`hooks/register.tsx`](hooks/register.tsx).
 
 ## Play
 
-| Command | What it does |
+Type `/arcade` and pick a game. `/arcade` works mid-turn, so you can start a game while Claude is busy.
+
+| Command | |
 | --- | --- |
-| `/arcade` | Opens the arcade menu |
-| `/arcade snake` · `/arcade minesweeper` · `/arcade 2048` · `/arcade chess` | Starts that game |
-| `/arcade chip8 <name>` | Runs a bundled or saved ROM by name (`/arcade chip8 br8kout`) |
-| `/arcade load <path>` | Runs a CHIP-8 ROM file you supply |
-| `/arcade help` | Lists all of the above |
+| `/arcade` | Open the menu |
+| `/arcade snake` · `minesweeper` · `2048` · `chess` | Jump straight into a game |
+| `/arcade chip8 <name>` | Run a CHIP-8 ROM by name, e.g. `/arcade chip8 br8kout` |
+| `/arcade load <path>` | Run a CHIP-8 ROM file you supply |
+| `/arcade help` | Show all of the above |
 
-`/arcade` works mid-turn, so you can start a game while Claude is busy.
+**Click the game to play.** A click gives the game your mouse and keyboard (arrows included); **Esc** hands the
+keys back to Claude. Every game has **‹ menu** and **❚❚ pause** buttons in its header, or press `backspace` and `p`.
 
-**Play with the mouse: use the fullscreen renderer.** Run `/tui fullscreen` once (it restarts and resumes your
-session; `CLAUDE_CODE_NO_FLICKER=1` does the same for one launch). The arcade then docks beside the transcript and
-the mouse works everywhere: click a game in the menu, click cells in Minesweeper (right-click flags), click a piece
-and then its square in chess (or drag it), drag to slide in 2048, and press and hold the on-screen buttons under a
-CHIP-8 game. Clicking the game also gives it the keyboard, arrows included; `Esc` hands the keys back to Claude.
-The header's `‹ menu` and `❚❚ pause` buttons work in every game.
+| Game | Mouse | Keyboard |
+| --- | --- | --- |
+| Snake | | arrows / WASD |
+| Minesweeper | click to reveal (or chord a number), right-click to flag | arrows / HJKL move, `space` reveal, `f` flag, `1` `2` `3` board size, `r` restart |
+| 2048 | drag in a direction | arrows / WASD / HJKL, `u` undo, `r` restart |
+| Chess | click a piece, then its square (or drag it); buttons for new game, undo, swap sides, 2 players, engine level | arrows / WASD + `space`, `u` undo, `n` new, `c` swap sides, `l` level, `t` two players, `g` letter pieces |
+| CHIP-8 | press and hold the on-screen buttons | number keys are the keypad's digits, arrows = 5 7 8 9, `space` = 6; the full pad is also on `1234` / `qwer` / `asdf` / `zxcv` |
 
-**On the classic renderer** a terminal can't send the mouse or arrow keys to a mod, so the pane shows a focused
-*play* field under the game and forwards what you type: letters (WASD/HJKL), digits, space and enter. The pane is
-short there, so the menu scrolls, chess uses a compact board and CHIP-8 switches to braille (2×4 pixels per
-character).
+<details>
+<summary>On the classic renderer (no <code>/tui fullscreen</code>)</summary>
 
-In every game `p` pauses and `backspace` returns to the menu.
+Claude Code's classic renderer can't pass a mouse or arrow keys to a mod, so the arcade shows a **play** field under
+the game and forwards what you type: letters, digits, space and enter (every game has letter controls). The pane is
+shorter there, so the menu scrolls, chess uses a compact board and CHIP-8 draws in braille, 2×4 pixels per
+character. It works, but fullscreen is much nicer.
+</details>
 
-| Game | Controls |
-| --- | --- |
-| Snake | arrows / WASD turn · `r` restart |
-| Minesweeper | click to reveal, right-click to flag · arrows / HJKL move · `space` reveal (on a number: chord) · `f` flag · `1`/`2`/`3` board size · `r` restart |
-| 2048 | drag with the mouse, or arrows / WASD / HJKL, to slide · `u` undo · `r` restart · `c` dismiss the 2048 message and keep going |
-| Chess | click a piece then its square, or drag it · buttons under the board for new game, undo, swap sides, two players, level · keys: arrows / WASD + `space`, `u` `n` `c` `t` `l`, `g` letters instead of piece glyphs |
-| CHIP-8 | press and hold the on-screen buttons (the keys the game's instructions name, or the whole pad) · number keys are the pad's digits, so "keys 7 and 9" means 7 and 9 · arrows = 5/7/8/9 · `space`/`enter` = 6 · the pad's A–F are on `z`/`c`/`r`/`f`/`v` and `4` is also `q` |
+### Bring your own CHIP-8 ROMs
 
-### Your own CHIP-8 ROMs
-
-Run one with `/arcade load ~/Downloads/game.ch8`, or drop `.ch8` files into `~/.claude/arcade/roms/` to list them in
-the menu. A `roms.json` beside them can set a ROM's title, speed and Octo quirk flags:
+Run any ROM with `/arcade load ~/Downloads/game.ch8`, or drop `.ch8` files into `~/.claude/arcade/roms/` to list them
+in the menu. An optional `roms.json` beside them sets a ROM's title, speed, [Octo](https://johnearnest.github.io/Octo/)
+quirk flags, instructions and palette:
 
 ```json
-{ "game": { "title": "My Game", "tickrate": 15, "quirks": { "shift": false, "loadStore": false, "clip": true } } }
+{
+  "mygame": {
+    "title": "My Game",
+    "tickrate": 15,
+    "quirks": { "shift": false, "loadStore": false, "clip": true },
+    "howto": "Keys 7 and 9 move. Key 6 fires.",
+    "colors": { "fill": "#ffcc00", "background": "#0000ff" }
+  }
+}
 ```
 
-## Where the games come from (and why that's legal)
+Keys named in `howto` ("keys 7 and 9") become the on-screen buttons. The [Chip8 Community Archive](https://github.com/JohnEarnest/chip8Archive)
+has dozens more, all CC0.
 
-Everything in this repository is either written here or explicitly public domain:
+## Where the games come from
 
-- Snake, Minesweeper, 2048, chess (rules and the built-in engine) and the CHIP-8 interpreter are original code, MIT
-  licensed. (2048 is Gabriele Cirulli's design, itself MIT licensed; this is a fresh implementation.)
-- Stockfish is **not** bundled. The mod runs the copy you installed as a separate program and talks to it over UCI,
-  so the arcade's license stays MIT and Stockfish's GPL stays with Stockfish.
-- The bundled ROMs come from the [Chip8 Community Archive](https://github.com/JohnEarnest/chip8Archive), which
-  places all of its programs under CC0. Credits are in [`roms/CREDITS.md`](roms/CREDITS.md).
-- `/arcade load` runs ROMs you supply. The project does not ship, link to or help find commercial ROMs. CHIP-8 also
-  needs no BIOS: the font is the standard 80-byte hex font, reproduced from the specification.
+Everything here is either original or explicitly public domain, so the whole project can be open source:
+
+- **Original code (MIT):** Snake, Minesweeper, 2048, the chess rules and built-in engine, and the CHIP-8
+  interpreter. 2048 is Gabriele Cirulli's design, itself MIT licensed; this is a fresh implementation.
+- **Stockfish is not bundled.** The arcade runs the copy you installed as a separate program and talks to it over
+  UCI, so this project stays MIT while Stockfish's GPL stays with Stockfish.
+- **The 12 bundled ROMs** come from the Chip8 Community Archive, which dedicates everything in it to the public
+  domain (CC0). Authors and titles are credited in [`roms/CREDITS.md`](roms/CREDITS.md).
+- **`/arcade load` runs ROMs you supply.** This project doesn't ship, link to or help find commercial ROMs. CHIP-8
+  needs no BIOS; its 80-byte hex font comes from the spec.
 
 ## How it works
 
+A mod is a hooks module plus, for interactive UI, a *Client* surface module that runs on Claude Code's drawing
+thread:
+
 ```
-hooks/register.tsx   hooks module: /arcade, the pane, ROM files, Stockfish, Claude's busy state
-hooks/client.tsx     Client surface module: runs on the drawing thread; menu, keys, frame clock, drawing
-hooks/games/         cartridges: plain TypeScript, no engine imports
-  cartridge.ts       the contract every game implements
-  snake.ts, minesweeper.ts, g2048.ts, chess/, chip8/
-roms/                CC0 CHIP-8 ROMs, their metadata (roms.json) and credits
-tests/arcade.test.tsx   engine tests (claude plugin test .)
-tests/unit/*.spec.ts    cartridge tests (bun test)
+hooks/register.tsx     hooks module: /arcade, the pane, ROM files, Stockfish, Claude's busy state
+hooks/client.tsx       Client: menu, keys, mouse, a 60 Hz frame clock, drawing
+hooks/games/           the games ("cartridges"): plain TypeScript, no Claude Code imports
+  cartridge.ts         the contract every game implements
+  snake.ts  minesweeper.ts  g2048.ts  chess/  chip8/
+roms/                  CC0 CHIP-8 ROMs, their settings (roms.json) and credits
+tests/arcade.test.tsx  engine tests: mount the pane, click and type into it (claude plugin test .)
+tests/unit/            game tests (bun test)
 ```
 
-A cartridge is a plain object: `init`, `key`, an optional `tick` on a fixed period, and `view`, which returns lines
-of styled spans. The Client drives it. A cartridge that needs the machine (chess asking Stockfish for a move) returns a
-`pendingRequest`; the Client posts it to the hooks module, and the answer comes back through `onResponse`.
+A cartridge is a plain object with `init`, `key`, an optional `pointer` (mouse) and `tick` (fixed period), and
+`view`, which returns lines of styled text. The Client drives it and draws it. A game that needs the machine (chess
+asking Stockfish for a move) returns a `pendingRequest`; the Client posts it to the hooks module, and the answer
+comes back through `onResponse`.
 
-To add a game, write a `Cartridge` in `hooks/games/`, add it to `hooks/games/index.ts`, and give it a spec in
-`tests/unit/`.
+### Add a game
+
+1. Write a `Cartridge` in `hooks/games/` ([`snake.ts`](hooks/games/snake.ts) is a small example).
+2. Add it to [`hooks/games/index.ts`](hooks/games/index.ts).
+3. Add tests in `tests/unit/`.
+
+Use Claude Code theme colours (`text`, `inactive`, `success`, ...) for anything drawn on the pane's own background,
+so the game reads well in light and dark themes. Pull requests welcome!
 
 ## Develop
 
 ```sh
+git clone https://github.com/thefotes/pane-arcade && cd pane-arcade
 bun install
-claude --plugin-dir .        # once: loading the mod lays the engine's types in .claude-plugin/types/
-bun test tests/unit          # cartridge tests
-bun run typecheck            # strict TypeScript: cartridges, then the hooks and Client against the engine types
-claude plugin validate .     # what the engine will load
-claude plugin test .         # engine tests: mounts the pane and drives it
+claude --plugin-dir .        # run Claude Code with the mod loaded; saving a file hot-reloads it
+bun test tests/unit          # game tests
+bun run typecheck            # strict TypeScript (needs one `claude --plugin-dir .` run to lay the engine's types)
+claude plugin validate .     # what Claude Code will load
+claude plugin test .         # engine tests
 ```
 
-A session started with `--plugin-dir .` hot-reloads the mod when you save.
+## Credits
+
+- CHIP-8 games by the authors listed in [`roms/CREDITS.md`](roms/CREDITS.md), via John Earnest's Chip8 Community Archive.
+- [Stockfish](https://stockfishchess.org) by the Stockfish developers (not bundled).
+- Built with [Claude Code](https://claude.com/claude-code) and [opencode](https://opencode.ai) running a local model.
 
 ## License
 
-MIT, except the bundled ROMs (CC0, see `roms/CREDITS.md`).
+[MIT](LICENSE), except the bundled ROMs, which are CC0 (see [`roms/CREDITS.md`](roms/CREDITS.md)).
+
+Pane Arcade is an independent community project, not affiliated with or endorsed by Anthropic. Claude and Claude
+Code are trademarks of Anthropic.
