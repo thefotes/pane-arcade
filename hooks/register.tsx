@@ -117,10 +117,16 @@ export const register: Register = on => {
       roms: (await read($, roms)).map(r => ({ name: r.name, title: r.title ?? r.name })),
       keys: await read($, keys),
     }
-    const client = <Client key="arcade" module="./client.tsx" props={props} width="100%" flexGrow={1} />
     // In the fullscreen layout a click gives the game the keyboard (arrows too).
     // On the main screen nothing can click it, so a field forwards typed keys.
-    if (e.viewport?.isFullscreen === true) {
+    const fullscreen = e.viewport?.isFullscreen === true
+    // A Client is as tall as what it last drew unless told otherwise; size it to
+    // the pane's body so a game can use all of it.
+    const rows = Math.max(12, e.props.scroll.bodyRows - (fullscreen ? 0 : 1))
+    const client = (
+      <Client key="arcade" module="./client.tsx" props={props} width={e.props.bodyColumns} height={rows} />
+    )
+    if (fullscreen) {
       return client
     }
 

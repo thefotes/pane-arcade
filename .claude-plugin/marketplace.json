@@ -1,0 +1,14 @@
+{
+  "name": "claude-arcade",
+  "description": "Games to play in a Claude Code pane while Claude works.",
+  "owner": {
+    "name": "Peter Foti"
+  },
+  "plugins": [
+    {
+      "name": "arcade",
+      "source": "./",
+      "description": "Play Snake, Minesweeper, chess (vs Stockfish) and CHIP-8 ROMs in a pane while Claude works."
+    }
+  ]
+}
