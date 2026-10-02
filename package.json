@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "test": "bun test tests/unit",
-    "typecheck": "tsc -p tsconfig.unit.json"
+    "typecheck": "tsc -p tsconfig.unit.json && tsc -p tsconfig.mod.json"
   },
   "devDependencies": {
     "@types/bun": "^1.4.2",

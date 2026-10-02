@@ -1,6 +1,6 @@
 // Engine-level tests: `claude plugin test .` loads the plugin as a session
 // would, mounts the arcade pane and drives its Client with keys.
-import { expect, test } from 'claude-code/testing'
+import { type Engine, expect, test } from 'claude-code/testing'
 
 const PANE = {
   plugin: 'arcade',
@@ -17,7 +17,7 @@ const PANE = {
   viewport: { columns: 110, rows: 34 },
 } as const
 
-async function mountArcade($: Parameters<Parameters<typeof test>[1]>[0], surface: 'terminal' | 'desktop') {
+async function mountArcade($: Engine, surface: 'terminal' | 'desktop') {
   const ui = await $.ui.mount({ ...PANE, surface })
   await ui.resize({ columns: 110, rows: 34, in: 'arcade' })
 
@@ -59,14 +59,16 @@ test('snake moves on the frame clock once started', async $ => {
   await ui.unmount()
 })
 
+const RUN = { origin: { kind: 'composer' }, presentation: { isFullscreen: true, columns: 200 } } as const
+
 test('/arcade answers usage questions without opening anything', async $ => {
-  const unknown = await $.command.run({ command: 'arcade', args: 'pong' })
+  const unknown = await $.command.run({ ...RUN, command: 'arcade', args: 'pong' })
   expect(unknown.text).toContain('Unknown game')
 
-  const help = await $.command.run({ command: 'arcade', args: 'help' })
+  const help = await $.command.run({ ...RUN, command: 'arcade', args: 'help' })
   expect(help.text).toContain('/arcade load <path>')
 
-  const missing = await $.command.run({ command: 'arcade', args: 'load /nonexistent/x.ch8' })
+  const missing = await $.command.run({ ...RUN, command: 'arcade', args: 'load /nonexistent/x.ch8' })
   expect(missing.text).toContain('Could not read')
 })
 

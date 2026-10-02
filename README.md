@@ -100,11 +100,14 @@ To add a game, write a `Cartridge` in `hooks/games/`, add it to `hooks/games/ind
 
 ```sh
 bun install
+claude --plugin-dir .        # once: loading the mod lays the engine's types in .claude-plugin/types/
 bun test tests/unit          # cartridge tests
-bun run typecheck            # strict TypeScript over the cartridges
+bun run typecheck            # strict TypeScript: cartridges, then the hooks and Client against the engine types
 claude plugin validate .     # what the engine will load
 claude plugin test .         # engine tests: mounts the pane and drives it
 ```
+
+A session started with `--plugin-dir .` hot-reloads the mod when you save.
 
 ## License
 

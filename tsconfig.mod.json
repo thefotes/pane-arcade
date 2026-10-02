@@ -1,0 +1,5 @@
+{
+  "extends": "./.claude-plugin/types/tsconfig.json",
+  "compilerOptions": { "lib": ["esnext"] },
+  "include": ["hooks", "types", "tests/arcade.test.tsx"]
+}
