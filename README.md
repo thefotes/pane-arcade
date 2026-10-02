@@ -1,7 +1,5 @@
 # Pane Arcade 🕹️
 
-![Pane Arcade: a terminal with Claude Code on the left and a game of Minesweeper in a pane on the right](docs/pane-arcade-social.png)
-
 ![Pane Arcade: a coding terminal beside a Minesweeper game pane](docs/pane-arcade-hero.png)
 
 **Play games in a pane while Claude Code works.** Snake, Minesweeper, 2048, chess against Stockfish, and a
