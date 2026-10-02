@@ -20,6 +20,7 @@ const USAGE = [
   `  games: ${CARTRIDGES.filter(c => c.id !== 'chip8').map(c => c.id).join(', ')}`,
   '  /arcade chip8 <name>   run a bundled or saved CHIP-8 ROM by name',
   '  /arcade load <path>    run a CHIP-8 ROM file you supply',
+  '  /arcade close          close the arcade (or click its ✕ close button)',
   '  ROM folder: ~/.claude/arcade/roms (files ending .ch8 show up in the menu)',
 ].join('\n')
 
@@ -46,6 +47,11 @@ export const register: Register = on => {
 
     if (word === 'help') {
       return { text: USAGE }
+    }
+
+    if (word === 'close' || word === 'quit' || word === 'exit') {
+      await $.ui.close({ id: PANE })
+      return { text: 'Arcade closed. /arcade opens it again.' }
     }
 
     if (word === 'load') {
@@ -161,6 +167,8 @@ export const register: Register = on => {
         const answer = await stockfish($, request as HostRequest)
         await update($, response, () => answer)
       }
+    } else if (data?.type === 'close') {
+      await $.ui.close({ id: PANE })
     } else if (data?.type === 'rom') {
       const name = String((data as { name: unknown }).name)
       const rom = (await read($, roms)).find(r => r.name === name)

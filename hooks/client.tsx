@@ -19,7 +19,7 @@ type Props = {
 }
 
 /** A clickable span of the header row, by column. */
-type HeaderButton = { from: number; to: number; action: 'menu' | 'pause' }
+type HeaderButton = { from: number; to: number; action: 'menu' | 'pause' | 'close' }
 
 type MenuItem = { label: string; blurb: string; game: string; rom?: string }
 
@@ -42,7 +42,7 @@ type World = {
   menuRows: (number | undefined)[]
   headerButtons: HeaderButton[]
   props: Props
-  post: (data: { type: 'host'; request: HostRequest } | { type: 'rom'; name: string }) => void
+  post: (data: { type: 'host'; request: HostRequest } | { type: 'rom'; name: string } | { type: 'close' }) => void
 }
 
 type View = { world: World; v: number }
@@ -274,6 +274,7 @@ function onPointer(world: World, event: ClientPointerEvent, room: Size): boolean
     const button = world.headerButtons.find(b => event.x >= b.from && event.x < b.to)
     if (button?.action === 'menu') world.screen = 'menu'
     if (button?.action === 'pause') world.paused = !world.paused
+    if (button?.action === 'close') world.post({ type: 'close' })
     return button !== undefined
   }
   if (world.screen === 'menu') {
@@ -359,13 +360,16 @@ function draw(world: World, surface: ClientSurface<View>) {
 
   const title = world.screen === 'menu' ? 'ARCADE' : `ARCADE › ${world.title}`
   // Clickable header buttons in a game; their columns are recorded for onPointer.
+  // Close only where a click can reach it: the classic renderer has no mouse.
+  const close = world.props.fullscreen ? [{ label: '✕ close', action: 'close' as const }] : []
   const buttons: { label: string; action: HeaderButton['action'] }[] =
     world.screen === 'game'
       ? [
           { label: '‹ menu', action: 'menu' },
           { label: world.paused ? '▶ resume' : '❚❚ pause', action: 'pause' },
+          ...close,
         ]
-      : []
+      : close
   world.headerButtons = []
   let column = title.length
   for (const button of buttons) {
@@ -491,7 +495,7 @@ function menuFrame(world: World, room: Size): Frame {
       ? 'Click a game to play. Click the game area for mouse and arrow keys; Esc hands keys back to Claude.'
       : 'Tip: mouse and arrow keys need the fullscreen renderer. Type /tui fullscreen to switch.',
     help: world.props.fullscreen
-      ? 'click or arrows + enter to choose · in a game: p pause · backspace menu · esc back to prompt'
-      : 'type j/k + enter in the play field to choose · in a game: p pause · backspace menu',
+      ? 'click or arrows + enter to choose · esc back to Claude · ✕ close (or /arcade close)'
+      : 'type j/k + enter in the play field to choose · esc back to Claude · /arcade close to quit',
   }
 }

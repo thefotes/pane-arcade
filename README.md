@@ -1,5 +1,7 @@
 # Pane Arcade 🕹️
 
+![Pane Arcade: a coding terminal beside a Minesweeper game pane](docs/pane-arcade-hero.png)
+
 **Play games in a pane while Claude Code works.** Snake, Minesweeper, 2048, chess against Stockfish, and a
 CHIP-8 emulator with a dozen public-domain games built in, plus any CHIP-8 ROM you bring.
 
@@ -59,10 +61,15 @@ Type `/arcade` and pick a game. `/arcade` works mid-turn, so you can start a gam
 | `/arcade snake` · `minesweeper` · `2048` · `chess` | Jump straight into a game |
 | `/arcade chip8 <name>` | Run a CHIP-8 ROM by name, e.g. `/arcade chip8 br8kout` |
 | `/arcade load <path>` | Run a CHIP-8 ROM file you supply |
+| `/arcade close` | Close the arcade |
 | `/arcade help` | Show all of the above |
 
 **Click the game to play.** A click gives the game your mouse and keyboard (arrows included); **Esc** hands the
-keys back to Claude. Every game has **‹ menu** and **❚❚ pause** buttons in its header, or press `backspace` and `p`.
+keys back to Claude and leaves the game where it is. Every game has **‹ menu** and **❚❚ pause** buttons in its
+header, or press `backspace` and `p`.
+
+**To quit,** click **✕ close** in the arcade's header (or the pane's own ✕), press `ctrl+x` then `x`, or run
+`/arcade close`.
 
 | Game | Mouse | Keyboard |
 | --- | --- | --- |

@@ -129,3 +129,28 @@ test('a malformed post from the pane is ignored, not thrown', async $ => {
   expect(await ui.find({ text: /Pick a game/, in: 'arcade' })).toBeDefined()
   await ui.unmount()
 })
+
+test('/arcade close closes the pane', async ($, on) => {
+  const closed: string[] = []
+  on('ui.close', ($, e) => {
+    closed.push(e.id)
+    return { value: undefined }
+  })
+  const ran = await $.command.run({ ...RUN, command: 'arcade', args: 'close' })
+  expect(ran.text).toContain('Arcade closed')
+  expect(closed).toEqual(['arcade'])
+})
+
+test('the ✕ close button in the header closes the pane', async ($, on) => {
+  const closed: string[] = []
+  on('ui.close', ($, e) => {
+    closed.push(e.id)
+    return { value: undefined }
+  })
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal', viewport: { columns: 110, rows: 34, isFullscreen: true } })
+  await ui.resize({ columns: 110, rows: 34, in: 'arcade' })
+  // On the menu the header is "ARCADE" then two spaces, then "✕ close".
+  await ui.pointer({ type: 'down', x: 'ARCADE'.length + 3, y: 0, button: 'left', in: 'arcade' })
+  expect(closed).toEqual(['arcade'])
+  await ui.unmount()
+})

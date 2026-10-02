@@ -1,0 +1,12 @@
+Generated with the built-in image_gen tool.
+
+Use case: ads-marketing
+Asset type: GitHub repository hero image, used in README and social preview.
+Primary request: Create a polished 1280×640 pixel landscape image, exact 2:1 aspect ratio, for the open-source project Pane Arcade: classic games in a docked terminal pane while a coding task runs.
+Reference context: The supplied screenshot shows a charcoal terminal occupying the left two-thirds, with a narrow game pane docked on the right containing Minesweeper. Use that split-pane concept as inspiration, but create an original designed hero, not a literal screenshot. Exclude all text and logos from the original screenshot.
+Scene and subject: A beautifully composed front-facing terminal window on a deep charcoal backdrop. In the left pane, a few understated lines of abstract code represented by short muted gray and warm coral strokes, a single prompt chevron and a small block cursor suggest ongoing coding. In the right pane, a crisp recognizable retro Minesweeper grid with a handful of revealed squares and tiny coral flags. A slim vertical divider makes the parallel coding-and-playing idea immediately clear. Use generous negative space and a strong visual hierarchy.
+Style: Clean premium software editorial artwork with precise pixel-inspired geometry, subtly tactile dark surfaces, restrained soft shadows. Mature, playful, understated; no neon cyberpunk or clutter. Colors informed by screenshot: charcoal, off-white, muted coral, small pale blue and sage accents.
+Composition: Large title on the left above the terminal strokes, game grid clearly visible to the right. Keep title and all essential elements comfortably within a 64-pixel safe margin. The image must remain legible as a small social card. The terminal can occupy most of the canvas with breathing room around it.
+Text (verbatim): "Pane Arcade" only. Large, elegant bold monospace typography in warm off-white, exactly spelled. No tagline or other words. Tiny game numerals are permitted within revealed cells.
+Avoid: Never include the words Claude, clawed, Claude Code, Anthropic, or any provider name. No mascots, no logos, no watermark, no browser chrome, no dense paragraphs or tiny UI labels, no extra headline text.
+Output: Exactly 1280×640 pixels if possible; otherwise maintain the exact 2:1 landscape ratio at higher resolution. Opaque background.
