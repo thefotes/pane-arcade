@@ -14,7 +14,12 @@
       "vfOrder": false
     },
     "desc": "You can't even imagine how amazing this breakout clone is!",
-    "event": "Octojam1"
+    "event": "Octojam1",
+    "howto": "Keys 7 and 9 slide the paddle. Clear the bricks without letting the ball past you.",
+    "colors": {
+      "fill": "#ff84fe",
+      "background": "#ca2553"
+    }
   },
   "superpong": {
     "title": "Super Pong",
@@ -31,7 +36,12 @@
       "vfOrder": false
     },
     "desc": "A fast pong-like.",
-    "event": "Octojam8"
+    "event": "Octojam8",
+    "howto": "Key 6 serves the ball. Keys 7 and 9 slide the paddle, and the ball must not get past you.",
+    "colors": {
+      "fill": "#43523d",
+      "background": "#c7f0d8"
+    }
   },
   "flightrunner": {
     "title": "Flight Runner",
@@ -48,7 +58,12 @@
       "vfOrder": false
     },
     "desc": "A simple flight runner for the Chip8.",
-    "event": "Octojam1"
+    "event": "Octojam1",
+    "howto": "Keys 7 and 9 steer left and right.",
+    "colors": {
+      "fill": "#ffcc00",
+      "background": "#0000ff"
+    }
   },
   "dinorun": {
     "title": "Dino Run",
@@ -65,7 +80,12 @@
       "vfOrder": false
     },
     "desc": "An endless runner game for Chip-8.",
-    "event": ""
+    "event": "",
+    "howto": "Key 5 jumps. An endless runner, so the only aim is to keep going.",
+    "colors": {
+      "fill": "#004020",
+      "background": "#c7f0d8"
+    }
   },
   "fuse": {
     "title": "Fuse",
@@ -82,7 +102,11 @@
       "vfOrder": false
     },
     "desc": "A minimalist reinterpretation of the classic Pipe Dream.",
-    "event": "Octojam3"
+    "event": "Octojam3",
+    "colors": {
+      "fill": "#306230",
+      "background": "#8bac0f"
+    }
   },
   "slipperyslope": {
     "title": "Slippery Slope",
@@ -99,7 +123,12 @@
       "vfOrder": false
     },
     "desc": "The ice we skate is getting pretty thin. The water's getting warm so you might as well swim.",
-    "event": "Octojam5"
+    "event": "Octojam5",
+    "howto": "Key 9 skates you on across the thinning ice. The other keys only twitch on the spot.",
+    "colors": {
+      "fill": "#000080",
+      "background": "#b0e0e6"
+    }
   },
   "chipwar": {
     "title": "ChipWar",
@@ -116,7 +145,11 @@
       "vfOrder": false
     },
     "desc": "A (loose) adaptation of the classic DiceWars.",
-    "event": ""
+    "event": "",
+    "colors": {
+      "fill": "#000066",
+      "background": "#6699ff"
+    }
   },
   "caveexplorer": {
     "title": "Cave Explorer",
@@ -133,7 +166,11 @@
       "vfOrder": false
     },
     "desc": "Do you have what it takes to be a Cave Explorer?",
-    "event": ""
+    "event": "",
+    "colors": {
+      "fill": "#ffcc00",
+      "background": "#996600"
+    }
   },
   "outlaw": {
     "title": "Outlaw",
@@ -150,7 +187,12 @@
       "vfOrder": false
     },
     "desc": "An adaptation of the Atari 2600 game \"Outlaw\" for the Chip8.",
-    "event": ""
+    "event": "",
+    "howto": "Keys 5 7 8 9 move your gunman, key 6 fires a shot. A duel with the outlaw across the screen.",
+    "colors": {
+      "fill": "#aa4400",
+      "background": "#664400"
+    }
   },
   "mastermind": {
     "title": "Mastermind",
@@ -167,7 +209,11 @@
       "vfOrder": false
     },
     "desc": "The classic puzzle game of deduction.",
-    "event": "Octojam3"
+    "event": "Octojam3",
+    "colors": {
+      "fill": "#fcfcfc",
+      "background": "#005e20"
+    }
   },
   "mini-lights-out": {
     "title": "Mini Lights Out",
@@ -184,7 +230,8 @@
       "vfOrder": false
     },
     "desc": "Turn the lights out",
-    "event": "Octojam6"
+    "event": "Octojam6",
+    "howto": "The sixteen keys are the grid, laid out just as they sit on the keypad. Press one to toggle that light, and turn them all out."
   },
   "octojam1title": {
     "title": "Octojam 1 Title",
@@ -201,6 +248,10 @@
       "vfOrder": false
     },
     "desc": "Greeting program for the Octo-ber 2014 Chip8 Game Jam.",
-    "event": "Octojam1"
+    "event": "Octojam1",
+    "colors": {
+      "fill": "#ffaa00",
+      "background": "#aa4400"
+    }
   }
 }

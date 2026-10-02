@@ -35,6 +35,9 @@ const PHOSPHOR = '#7ee787'
 export type Chip8State = {
   cpu: Chip8 | null
   name: string
+  howto: string | null
+  fill: string
+  background: string | undefined
   tickrate: number
   /** Frames each key stays held. */
   hold: number[]
@@ -52,6 +55,9 @@ export const chip8: Cartridge<Chip8State> = {
     const state: Chip8State = {
       cpu: null,
       name: romName ?? 'no ROM',
+      howto: romOptions?.howto ?? null,
+      fill: romOptions?.colors?.fill ?? PHOSPHOR,
+      background: romOptions?.colors?.background,
       tickrate: Math.max(1, Math.min(1000, romOptions?.tickrate ?? DEFAULT_TICKRATE)),
       hold: new Array<number>(16).fill(0),
       frames: 0,
@@ -117,7 +123,7 @@ export const chip8: Cartridge<Chip8State> = {
         for (let y = 0; y < HEIGHT; y++) {
           let row = ''
           for (let x = 0; x < WIDTH; x++) row += on(x, y) ? '██' : '  '
-          lines.push(framed(row, border))
+          lines.push(framed(row, border, state))
         }
       } else {
         for (let y = 0; y < HEIGHT; y += 2) {
@@ -127,14 +133,14 @@ export const chip8: Cartridge<Chip8State> = {
             const bottom = on(x, y + 1)
             row += top && bottom ? '█' : top ? '▀' : bottom ? '▄' : ' '
           }
-          lines.push(framed(row, border))
+          lines.push(framed(row, border, state))
         }
       }
     } else {
       const rows = big ? HEIGHT : HEIGHT / 2
       for (let y = 0; y < rows; y++) {
         const text = y === Math.floor(rows / 2) ? center(state.error ?? '', across) : ' '.repeat(across)
-        lines.push(framed(text, border))
+        lines.push(framed(text, border, state))
       }
     }
     lines.push([{ text: `└${'─'.repeat(across)}┘`, color: border }])
@@ -143,20 +149,21 @@ export const chip8: Cartridge<Chip8State> = {
     const halted = cpu?.halted ? `  · halted: ${cpu.halted}` : ''
     const waiting = cpu && cpu.waitingForKey !== -1 ? '  · waiting for a key' : ''
 
+    const status = `${state.name}${sound}${waiting}${halted}${state.error && cpu ? `  · ${state.error}` : ''}`
+
     return {
       lines,
-      status: `${state.name}${sound}${waiting}${halted}${state.error && cpu ? `  · ${state.error}` : ''}`,
-      help: 'keypad 1234/qwer/asdf/zxcv · arrows = 5/7/8/9 · space = 6 · p pause · backspace menu',
+      status: state.howto ? `${status}  · ${state.howto}` : status,
+      help: 'pad 5 7 8 9 = w a s d / arrows · 6 = e / space · full pad 1234 qwer asdf zxcv · p pause · backspace menu',
     }
   },
 }
 
-function framed(row: string, border: string): Line {
-  return [
-    { text: '│', color: border },
-    { text: row, color: PHOSPHOR },
-    { text: '│', color: border },
-  ]
+function framed(row: string, border: string, state: Chip8State): Line {
+  const screen: Line[number] = { text: row, color: state.fill }
+  if (state.background) screen.bg = state.background
+
+  return [{ text: '│', color: border }, screen, { text: '│', color: border }]
 }
 
 function center(text: string, width: number): string {

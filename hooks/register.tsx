@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
-import type { ArcadeLaunch, ArcadeResponse, ArcadeRom } from '../types'
+import type { ArcadeLaunch, ArcadeResponse, ArcadeRom, ArcadeRomOptions } from '../types'
 import type { HostRequest } from './games/cartridge'
 import { CARTRIDGES } from './games/index'
 
@@ -250,7 +250,7 @@ async function scanRoms($: EngineInterface): Promise<ArcadeRom[]> {
             path: `${dir}/${entry.name}`,
             source,
             ...(info?.title ? { title: info.title } : {}),
-            ...(info ? { romOptions: { tickrate: info.tickrate, quirks: info.quirks } } : {}),
+            ...(info ? { romOptions: romOptions(info) } : {}),
           })
         }
       }
@@ -264,7 +264,28 @@ async function scanRoms($: EngineInterface): Promise<ArcadeRom[]> {
   return found
 }
 
-type RomMeta = { title?: string; tickrate?: number; quirks?: Record<string, boolean> }
+type RomMeta = {
+  title?: string
+  tickrate?: number
+  quirks?: Record<string, boolean>
+  howto?: string
+  colors?: { fill: string; background: string }
+}
+
+const HEX = /^#[0-9a-f]{6}$/i
+
+/** Keeps the fields of a ROM's metadata the cartridge reads, and only well-formed ones. */
+function romOptions(info: RomMeta): ArcadeRomOptions {
+  const options: ArcadeRomOptions = {}
+  if (typeof info.tickrate === 'number') options.tickrate = info.tickrate
+  if (info.quirks && typeof info.quirks === 'object') options.quirks = info.quirks
+  if (typeof info.howto === 'string') options.howto = info.howto.slice(0, 200)
+  if (HEX.test(info.colors?.fill ?? '') && HEX.test(info.colors?.background ?? '')) {
+    options.colors = { fill: info.colors!.fill, background: info.colors!.background }
+  }
+
+  return options
+}
 
 /** A ROM folder's optional `roms.json`: `{ "<file name without .ch8>": { title, tickrate, quirks } }`. */
 async function readRomMeta($: EngineInterface, path: string): Promise<Record<string, RomMeta>> {

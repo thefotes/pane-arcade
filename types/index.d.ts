@@ -5,8 +5,16 @@ export type ArcadeLaunch = {
   rom?: string
   romName?: string
   /** Tick rate and quirk flags from the ROM's metadata, when it has some. */
-  romOptions?: { tickrate?: number; quirks?: Record<string, boolean> }
+  romOptions?: ArcadeRomOptions
   nonce: number
+}
+
+/** How to run a ROM: speed, Octo quirk flags, instructions and palette. */
+export type ArcadeRomOptions = {
+  tickrate?: number
+  quirks?: Record<string, boolean>
+  howto?: string
+  colors?: { fill: string; background: string }
 }
 
 /** A ROM the menu can offer: bundled with the plugin or in the user's ROM folder. */
@@ -15,7 +23,7 @@ export type ArcadeRom = {
   path: string
   source: 'bundled' | 'user'
   title?: string
-  romOptions?: { tickrate?: number; quirks?: Record<string, boolean> }
+  romOptions?: ArcadeRomOptions
 }
 
 /** The host's answer to a cartridge's request (mirrors HostResponse in hooks/games/cartridge.ts). */

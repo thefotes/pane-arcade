@@ -60,6 +60,10 @@ export type RomOptions = {
   /** Instructions per 60 Hz frame. */
   tickrate?: number
   quirks?: Partial<Chip8Quirks>
+  /** How to play, in CHIP-8 keypad terms ("Keys 7 and 9 slide the paddle"). */
+  howto?: string
+  /** The ROM's palette, as `#rrggbb`. */
+  colors?: { fill: string; background: string }
 }
 
 export type Chip8Quirks = {
