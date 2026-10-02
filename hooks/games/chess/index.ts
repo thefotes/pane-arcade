@@ -1,6 +1,6 @@
 // Chess as a cartridge: you against Stockfish (when installed), a small
 // built-in engine (when not), or a friend at the same keyboard.
-import type { Cartridge, HostRequest, HostResponse, Line, Size, Span } from '../cartridge'
+import { type Cartridge, type HostRequest, type HostResponse, type Line, type Size, type Span, lineWidth } from '../cartridge'
 import {
   type Move,
   type Outcome,
@@ -341,9 +341,13 @@ function render(state: ChessState, size: Size) {
   // Move list beside the board when there is room.
   const boardWidth = 2 + 8 * w
   const side = sidePanel(state, board.length)
+  const sideWidth = Math.max(...side.map(lineWidth))
   const lines: Line[] =
     size.columns >= boardWidth + 4 + 22
-      ? board.map((line, i) => [...line, { text: '    ' }, ...(side[i] ?? [])])
+      ? board.map((line, i) => {
+          const panel = side[i] ?? []
+          return [...line, { text: '    ' }, ...panel, { text: ' '.repeat(sideWidth - lineWidth(panel)) }]
+        })
       : board
 
   return { lines, status: status(state), help: help(state) }
