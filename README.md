@@ -1,11 +1,11 @@
 # Pane Arcade 🕹️
 
+![Pane Arcade: a terminal with Claude Code on the left and a game of Minesweeper in a pane on the right](docs/pane-arcade-social.png)
+
 ![Pane Arcade: a coding terminal beside a Minesweeper game pane](docs/pane-arcade-hero.png)
 
 **Play games in a pane while Claude Code works.** Snake, Minesweeper, 2048, chess against Stockfish, and a
 CHIP-8 emulator with a dozen public-domain games built in, plus any CHIP-8 ROM you bring.
-
-<!-- Demo GIF goes here: ![Pane Arcade demo](docs/demo.gif) -->
 
 Pane Arcade is a [Claude Code mod](https://claude.dev): a plugin that adds a docked game pane to Claude Code.
 Kick off a long task, type `/arcade`, and play until Claude needs you. The pane's header shows
