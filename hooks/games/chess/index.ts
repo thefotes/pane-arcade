@@ -83,8 +83,10 @@ export const chess: Cartridge<ChessState> = {
   blurb: 'Play Stockfish (if installed) or a friend.',
   tickMs: 100,
 
-  init() {
-    return newGame(1, 'w', 'stockfish', DEFAULT_LEVEL, false)
+  init({ seed }) {
+    // Request ids carry the game number; starting from the seed keeps a late
+    // answer for an earlier game from matching this one's.
+    return newGame(seed, 'w', 'stockfish', DEFAULT_LEVEL, false)
   },
 
   key(state, { key }) {

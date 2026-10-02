@@ -131,8 +131,16 @@ function takeProps(world: World, props: Props, room: Size) {
     if (launch.game === 'menu') {
       world.screen = 'menu'
     } else {
-      const rom = launch.rom ? Uint8Array.fromBase64(launch.rom) : undefined
-      startGame(world, launch.game, room, rom, launch.romName, launch.romOptions)
+      let rom: Uint8Array | undefined
+      world.error = null
+      guard(world, () => {
+        rom = launch.rom ? Uint8Array.fromBase64(launch.rom) : undefined
+      })
+      if (world.error) {
+        world.screen = 'game'
+      } else {
+        startGame(world, launch.game, room, rom, launch.romName, launch.romOptions)
+      }
     }
   }
 
@@ -172,6 +180,8 @@ function startGame(
   world.paused = false
   world.screen = 'game'
   world.postedId = null
+  // An answer still in flight belongs to the game this one replaces.
+  world.responseId = world.props.response?.id ?? null
   const seed = (Math.random() * 0xffffffff) >>> 0
   guard(world, () => {
     world.game = cart.init({ seed, size: room, rom, romName, romOptions })
@@ -204,6 +214,7 @@ function onKey(world: World, key: Key, room: Size): boolean {
 function menuKey(world: World, key: Key, room: Size): boolean {
   const items = menuItems(world)
   const count = Math.max(1, items.length)
+  world.menuIndex = Math.min(world.menuIndex, count - 1)
   switch (key.key) {
     case 'up':
     case 'k':
@@ -365,6 +376,8 @@ function merge(line: Line): Line {
 
 function menuFrame(world: World, room: Size): Frame {
   const items = menuItems(world)
+  // The ROM list can shrink between draws (a rescan); keep the selection on it.
+  world.menuIndex = Math.max(0, Math.min(world.menuIndex, items.length - 1))
   const footer: Line[] = [
     [],
     [

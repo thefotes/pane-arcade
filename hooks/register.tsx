@@ -61,7 +61,12 @@ export const register: Register = on => {
       return { text: `Loaded ${loaded.name}. ${hint}` }
     }
 
-    if (word === 'chip8' && arg) {
+    if (word === 'chip8' && !arg) {
+      const list = await scanRoms($)
+      return { text: `Usage: /arcade chip8 <name>. ROMs: ${list.map(r => r.name).join(', ') || 'none'}` }
+    }
+
+    if (word === 'chip8') {
       const list = await scanRoms($)
       const rom = list.find(r => r.name.toLowerCase() === arg.toLowerCase())
       if (!rom) {

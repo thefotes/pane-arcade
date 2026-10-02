@@ -27,7 +27,7 @@ async function mountArcade($: Parameters<Parameters<typeof test>[1]>[0], surface
 test('the menu lists every game on each surface that runs a Client', async $ => {
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await mountArcade($, surface)
-    for (const title of ['Snake', 'Minesweeper']) {
+    for (const title of ['Snake', 'Minesweeper', '2048', 'Chess']) {
       expect(await ui.find({ text: title, in: 'arcade' })).toBeDefined()
     }
     await ui.unmount()
