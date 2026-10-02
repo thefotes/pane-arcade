@@ -134,12 +134,12 @@ export const register: Register = on => {
       <Box flexDirection="column" width="100%">
         {client}
         <Input
-          key="keys"
+          key={`keys-${props.launch?.nonce ?? 0}`}
           autoFocus
           label="play › "
           placeholder="type here to play (letters, space, enter; no arrows on this screen)"
           submitLabel="enter"
-          onInput={value => forwardTyping($, value)}
+          onInput={(value, input) => forwardTyping($, input.element, value)}
           onSubmit={() => pushKeys($, ['return'])}
         />
       </Box>
@@ -169,9 +169,15 @@ export const register: Register = on => {
 
 /** The key field's text as last seen, to tell what the newest edit typed. */
 let typed = ''
+/** Which key field that text belongs to: each launch draws a fresh, empty one. */
+let typedIn = ''
 
 /** Turns one edit of the key field into the keys it stands for. */
-async function forwardTyping($: EngineInterface, value: string) {
+async function forwardTyping($: EngineInterface, field: string, value: string) {
+  if (field !== typedIn) {
+    typedIn = field
+    typed = ''
+  }
   let pressed: string[]
   if (value.startsWith(typed)) {
     pressed = [...value.slice(typed.length)]

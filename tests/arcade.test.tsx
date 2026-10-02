@@ -78,15 +78,15 @@ test('on the main screen, keys typed into the play field reach the game', async 
     viewport: { columns: 110, rows: 34, isFullscreen: false },
   })
   await ui.resize({ columns: 110, rows: 34, in: 'arcade' })
-  expect(await ui.find({ type: 'Input', key: 'keys' })).toBeDefined()
+  expect(await ui.find({ type: 'Input', key: 'keys-0' })).toBeDefined()
 
-  await ui.input({ key: 'keys', text: 'j', kind: 'change' })
+  await ui.input({ key: 'keys-0', text: 'j', kind: 'change' })
   expect(await ui.find({ text: /▸\s+2\. Minesweeper/, in: 'arcade' })).toBeDefined()
 
-  await ui.input({ key: 'keys', text: 'j', kind: 'submit' })
+  await ui.input({ key: 'keys-0', text: 'j', kind: 'submit' })
   expect(await ui.find({ text: /Mines \d+\s+Flags 0/, in: 'arcade' })).toBeDefined()
 
-  await ui.input({ key: 'keys', text: 'jf', kind: 'change' })
+  await ui.input({ key: 'keys-0', text: 'jf', kind: 'change' })
   expect(await ui.find({ text: /Flags 1/, in: 'arcade' })).toBeDefined()
   await ui.unmount()
 })
