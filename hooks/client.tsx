@@ -12,6 +12,8 @@ type Props = {
   busy: boolean
   response: HostResponse | null
   roms: { name: string; title: string }[]
+  /** Keys typed into the pane's key field, for surfaces where the Client cannot take the keyboard. */
+  keys: { seq: number; key: string }[]
 }
 
 type MenuItem = { label: string; blurb: string; game: string; rom?: string }
@@ -25,6 +27,8 @@ type World = {
   title: string
   paused: boolean
   launchNonce: number
+  /** The last forwarded key handled. */
+  keySeq: number
   responseId: string | null
   postedId: string | null
   frames: number
@@ -49,6 +53,8 @@ export default function Arcade(props: Props, surface: ClientSurface<View>) {
       title: 'Arcade',
       paused: false,
       launchNonce: 0,
+      // Keys typed before this instance mounted are not replayed.
+      keySeq: props.keys[props.keys.length - 1]?.seq ?? 0,
       responseId: null,
       postedId: null,
       frames: 0,
@@ -120,6 +126,13 @@ function takeProps(world: World, props: Props, room: Size) {
     } else {
       const rom = launch.rom ? Uint8Array.fromBase64(launch.rom) : undefined
       startGame(world, launch.game, room, rom, launch.romName, launch.romOptions)
+    }
+  }
+
+  for (const typed of props.keys) {
+    if (typed.seq > world.keySeq) {
+      world.keySeq = typed.seq
+      onKey(world, { key: typed.key }, room)
     }
   }
 
@@ -282,7 +295,7 @@ function draw(world: World, surface: ClientSurface<View>) {
 
   return (
     <Box flexDirection="column" width="100%">
-      <Box flexDirection="row" justifyContent="space-between">
+      <Box flexDirection="row" justifyContent="space-between" paddingRight={2}>
         <Text bold color="#a371f7" wrap="truncate">
           {title}
           {paused}
@@ -348,7 +361,7 @@ function menuFrame(world: World): Frame {
     const selected = i === world.menuIndex
     lines.push([
       { text: selected ? '  ▸ ' : '    ', color: '#a371f7' },
-      { text: `${i + 1}. `, dim: !selected },
+      { text: `${String(i + 1).padStart(2)}. `, dim: !selected },
       { text: item.label.padEnd(28), bold: selected, color: selected ? '#e6edf3' : '#c9d1d9' },
       { text: item.blurb, dim: true },
     ])

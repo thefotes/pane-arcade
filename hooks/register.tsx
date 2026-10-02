@@ -13,6 +13,7 @@ const launch = atom({ plugin: 'arcade', key: 'launch' } as const, null)
 const busy = atom({ plugin: 'arcade', key: 'busy' } as const, false)
 const response = atom({ plugin: 'arcade', key: 'response' } as const, null)
 const roms = atom({ plugin: 'arcade', key: 'roms' } as const, [])
+const keys = atom({ plugin: 'arcade', key: 'keys' } as const, [])
 
 const USAGE = [
   'Usage: /arcade [game]',
@@ -36,6 +37,9 @@ export const register: Register = on => {
   })
 
   on('command.run', { command: 'arcade' }, async ($, e) => {
+    const hint = e.presentation?.isFullscreen
+      ? 'Click the game to give it the keyboard; Esc hands it back.'
+      : 'Type into the play field under the game (ctrl+x tab focuses the pane); Esc hands the keys back.'
     const [verb = '', ...rest] = e.args.trim().split(/\s+/).filter(Boolean)
     const arg = rest.join(' ')
     const word = verb.toLowerCase()
@@ -54,7 +58,7 @@ export const register: Register = on => {
       }
       await start($, { game: 'chip8', rom: loaded.base64, romName: loaded.name })
 
-      return { text: `Loaded ${loaded.name}. The pane has the keys; Esc hands them back.` }
+      return { text: `Loaded ${loaded.name}. ${hint}` }
     }
 
     if (word === 'chip8' && arg) {
@@ -69,7 +73,7 @@ export const register: Register = on => {
       }
       await start($, { game: 'chip8', rom: loaded.base64, romName: rom.title ?? rom.name, romOptions: rom.romOptions })
 
-      return { text: `Running ${rom.title ?? rom.name}.` }
+      return { text: `Running ${rom.title ?? rom.name}. ${hint}` }
     }
 
     if (word && !CARTRIDGES.some(c => c.id === word)) {
@@ -79,7 +83,7 @@ export const register: Register = on => {
     await scanRoms($)
     await start($, { game: word || 'menu' })
 
-    return { text: word ? `Starting ${word}.` : 'Arcade open. Pick a game with the arrows and Enter.' }
+    return { text: `${word ? `Starting ${word}.` : 'Arcade open: pick a game.'} ${hint}` }
   })
 
   on('turn.start', async ($, e, next) => {
@@ -105,15 +109,35 @@ export const register: Register = on => {
       const { Text } = $.ui.resolve(e)
       return <Text>The arcade needs the terminal or the desktop app.</Text>
     }
-    const { Client } = $.ui.resolve(e)
+    const { Box, Client, Input } = $.ui.resolve(e)
     const props = {
       launch: await read($, launch),
       busy: await read($, busy),
       response: await read($, response),
       roms: (await read($, roms)).map(r => ({ name: r.name, title: r.title ?? r.name })),
+      keys: await read($, keys),
+    }
+    const client = <Client key="arcade" module="./client.tsx" props={props} width="100%" flexGrow={1} />
+    // In the fullscreen layout a click gives the game the keyboard (arrows too).
+    // On the main screen nothing can click it, so a field forwards typed keys.
+    if (e.viewport?.isFullscreen === true) {
+      return client
     }
 
-    return <Client key="arcade" module="./client.tsx" props={props} width="100%" flexGrow={1} />
+    return (
+      <Box flexDirection="column" width="100%">
+        {client}
+        <Input
+          key="keys"
+          autoFocus
+          label="play › "
+          placeholder="type here to play (letters, space, enter; no arrows on this screen)"
+          submitLabel="enter"
+          onInput={value => forwardTyping($, value)}
+          onSubmit={() => pushKeys($, ['return'])}
+        />
+      </Box>
+    )
   })
 
   on('ui.message', { requestId: PANE }, async ($, e) => {
@@ -134,6 +158,31 @@ export const register: Register = on => {
     }
 
     return {}
+  })
+}
+
+/** The key field's text as last seen, to tell what the newest edit typed. */
+let typed = ''
+
+/** Turns one edit of the key field into the keys it stands for. */
+async function forwardTyping($: EngineInterface, value: string) {
+  let pressed: string[]
+  if (value.startsWith(typed)) {
+    pressed = [...value.slice(typed.length)]
+  } else if (typed.startsWith(value)) {
+    pressed = new Array<string>(typed.length - value.length).fill('backspace')
+  } else {
+    pressed = [...value].slice(-1)
+  }
+  typed = value
+  await pushKeys($, pressed)
+}
+
+async function pushKeys($: EngineInterface, pressed: string[]) {
+  if (pressed.length === 0) return
+  await update($, keys, list => {
+    let seq = list[list.length - 1]?.seq ?? 0
+    return [...list, ...pressed.map(key => ({ seq: ++seq, key }))].slice(-32)
   })
 }
 

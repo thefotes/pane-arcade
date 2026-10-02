@@ -26,6 +26,9 @@ export type ArcadeResponse = {
   error?: string
 }
 
+/** One key forwarded from the pane's key field to the game. */
+export type ArcadeKey = { seq: number; key: string }
+
 declare module 'claude-code' {
   interface PluginState {
     arcade: {
@@ -33,6 +36,8 @@ declare module 'claude-code' {
       busy: boolean
       response: ArcadeResponse | null
       roms: ArcadeRom[]
+      /** Keys typed into the pane's key field (main-screen layout), newest last. */
+      keys: ArcadeKey[]
     }
   }
 }

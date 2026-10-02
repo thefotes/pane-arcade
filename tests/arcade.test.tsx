@@ -69,3 +69,30 @@ test('/arcade answers usage questions without opening anything', async $ => {
   const missing = await $.command.run({ command: 'arcade', args: 'load /nonexistent/x.ch8' })
   expect(missing.text).toContain('Could not read')
 })
+
+test('on the main screen, keys typed into the play field reach the game', async $ => {
+  const ui = await $.ui.mount({
+    ...PANE,
+    surface: 'terminal',
+    props: { ...PANE.props, placement: 'inline' },
+    viewport: { columns: 110, rows: 34, isFullscreen: false },
+  })
+  await ui.resize({ columns: 110, rows: 34, in: 'arcade' })
+  expect(await ui.find({ type: 'Input', key: 'keys' })).toBeDefined()
+
+  await ui.input({ key: 'keys', text: 'j', kind: 'change' })
+  expect(await ui.find({ text: /▸\s+2\. Minesweeper/, in: 'arcade' })).toBeDefined()
+
+  await ui.input({ key: 'keys', text: 'j', kind: 'submit' })
+  expect(await ui.find({ text: /Mines \d+\s+Flags 0/, in: 'arcade' })).toBeDefined()
+
+  await ui.input({ key: 'keys', text: 'jf', kind: 'change' })
+  expect(await ui.find({ text: /Flags 1/, in: 'arcade' })).toBeDefined()
+  await ui.unmount()
+})
+
+test('the fullscreen layout draws no play field', async $ => {
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal', viewport: { columns: 110, rows: 34, isFullscreen: true } })
+  expect(await ui.find({ type: 'Input' })).toBeUndefined()
+  await ui.unmount()
+})
