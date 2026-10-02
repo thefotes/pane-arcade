@@ -105,3 +105,16 @@ describe('snake', () => {
     expect(b.food).toEqual(a.food)
   })
 })
+
+describe('snake redraws only when something moves', () => {
+  test('tick reports no change before the start, between steps and after death', () => {
+    const s = snake.init({ seed: 1, size: { columns: 80, rows: 30 } })
+    expect(snake.tick!(s)).toBe(false)
+    snake.key(s, { key: 'up' })
+    const results = [snake.tick!(s), snake.tick!(s), snake.tick!(s), snake.tick!(s)]
+    expect(results).toContain(true)
+    expect(results).toContain(false)
+    s.over = true
+    expect(snake.tick!(s)).toBe(false)
+  })
+})

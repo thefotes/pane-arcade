@@ -133,10 +133,11 @@ export const snake: Cartridge<SnakeState> = {
     if (state.queue.length < 2) state.queue.push(newDir)
   },
 
-  tick(state: SnakeState): void {
-    if (!state.started || state.over || state.won) return
+  tick(state: SnakeState): boolean {
+    // Nothing moves before the first key, after the game ends, or between steps.
+    if (!state.started || state.over || state.won) return false
     state.tickCount++
-    if (state.tickCount < state.stepEvery) return
+    if (state.tickCount < state.stepEvery) return false
     state.tickCount = 0
     if (state.queue.length > 0) {
       state.dir = state.queue.shift() ?? state.dir
@@ -147,7 +148,7 @@ export const snake: Cartridge<SnakeState> = {
     if (next.x < 0 || next.x >= state.boardW || next.y < 0 || next.y >= state.boardH) {
       state.over = true
       if (state.score > state.best) state.best = state.score
-      return
+      return true
     }
     const tail = state.snake[state.snake.length - 1]
     const eats = next.x === state.food.x && next.y === state.food.y
@@ -158,7 +159,7 @@ export const snake: Cartridge<SnakeState> = {
         if (seg && seg.x === next.x && seg.y === next.y) {
           state.over = true
           if (state.score > state.best) state.best = state.score
-          return
+          return true
         }
       }
     }
@@ -177,6 +178,7 @@ export const snake: Cartridge<SnakeState> = {
     } else {
       state.snake.pop()
     }
+    return true
   },
 
   view(state: SnakeState, _size: Size): Frame {

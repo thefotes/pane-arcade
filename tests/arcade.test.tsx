@@ -113,3 +113,19 @@ test('in fullscreen the mouse picks games and works the header buttons', async $
   expect(await ui.find({ text: /Pick a game/, in: 'arcade' })).toBeDefined()
   await ui.unmount()
 })
+
+test('/arcade load only takes ROM files', async $ => {
+  for (const path of ['/home/me/.ssh/id_rsa', '/etc/hosts', '/tmp/.hidden.ch8', 'notes.txt']) {
+    const ran = await $.command.run({ ...RUN, command: 'arcade', args: `load ${path}` })
+    expect(ran.text).toContain("doesn't look like a CHIP-8 ROM")
+  }
+})
+
+test('a malformed post from the pane is ignored, not thrown', async $ => {
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  await ui.post({ type: 'host' }, { in: 'arcade' })
+  await ui.post({ type: 'host', request: null }, { in: 'arcade' })
+  await ui.post('junk', { in: 'arcade' })
+  expect(await ui.find({ text: /Pick a game/, in: 'arcade' })).toBeDefined()
+  await ui.unmount()
+})

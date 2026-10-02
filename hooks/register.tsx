@@ -155,9 +155,12 @@ export const register: Register = on => {
   on('ui.message', { requestId: PANE }, async ($, e) => {
     const data = e.data as { type?: unknown } | null
     if (data?.type === 'host') {
-      const request = (data as { request: HostRequest }).request
-      const answer = await stockfish($, request)
-      await update($, response, () => answer)
+      // Posts come from code on the drawing thread: check the shape before use.
+      const request = (data as { request?: unknown }).request
+      if (request && typeof request === 'object') {
+        const answer = await stockfish($, request as HostRequest)
+        await update($, response, () => answer)
+      }
     } else if (data?.type === 'rom') {
       const name = String((data as { name: unknown }).name)
       const rom = (await read($, roms)).find(r => r.name === name)
@@ -226,6 +229,11 @@ async function loadRom(
   path: string,
 ): Promise<{ base64: string; name: string } | { error: string }> {
   const name = path.split('/').pop() ?? path
+  // Only ROM files: `/arcade load` must not become a way to feed any file on the
+  // machine (a key, a credential) into the interpreter.
+  if (!ROM_FILE.test(name) || name.startsWith('.')) {
+    return { error: `${name} doesn't look like a CHIP-8 ROM; /arcade load takes .ch8, .c8, .chip8, .rom or .bin files.` }
+  }
   try {
     const stat = await $.fs.stat(path)
     if (stat.kind !== 'file') {
@@ -236,7 +244,7 @@ async function loadRom(
     }
     const { base64 } = await $.fs.read(path, { as: 'bytes' })
 
-    return { base64, name: name.replace(/\.(ch8|c8|rom|bin)$/i, '') }
+    return { base64, name: name.replace(ROM_FILE, '') }
   } catch (error) {
     return { error: `Could not read ${path}: ${error instanceof Error ? error.message : String(error)}` }
   }
@@ -261,7 +269,7 @@ async function scanRoms($: EngineInterface): Promise<ArcadeRom[]> {
             name,
             path: `${dir}/${entry.name}`,
             source,
-            ...(info?.title ? { title: info.title } : {}),
+            ...(typeof info?.title === 'string' && info.title ? { title: info.title.slice(0, 60) } : {}),
             ...(info ? { romOptions: romOptions(info) } : {}),
           })
         }
@@ -285,12 +293,22 @@ type RomMeta = {
 }
 
 const HEX = /^#[0-9a-f]{6}$/i
+const ROM_FILE = /\.(ch8|c8|chip8|rom|bin)$/i
+const QUIRKS = ['shift', 'loadStore', 'clip', 'jump', 'logic', 'vfOrder'] as const
 
 /** Keeps the fields of a ROM's metadata the cartridge reads, and only well-formed ones. */
 function romOptions(info: RomMeta): ArcadeRomOptions {
   const options: ArcadeRomOptions = {}
-  if (typeof info.tickrate === 'number') options.tickrate = info.tickrate
-  if (info.quirks && typeof info.quirks === 'object') options.quirks = info.quirks
+  // A user's roms.json is untrusted input: keep known fields of the right type only.
+  if (typeof info.tickrate === 'number' && Number.isFinite(info.tickrate)) options.tickrate = info.tickrate
+  if (info.quirks && typeof info.quirks === 'object') {
+    const quirks: Record<string, boolean> = {}
+    for (const key of QUIRKS) {
+      const value = (info.quirks as Record<string, unknown>)[key]
+      if (typeof value === 'boolean') quirks[key] = value
+    }
+    options.quirks = quirks
+  }
   if (typeof info.howto === 'string') options.howto = info.howto.slice(0, 200)
   if (HEX.test(info.colors?.fill ?? '') && HEX.test(info.colors?.background ?? '')) {
     options.colors = { fill: info.colors!.fill, background: info.colors!.background }
