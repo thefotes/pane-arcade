@@ -1,0 +1,13 @@
+{
+  "name": "claude-arcade",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "bun test tests/unit",
+    "typecheck": "tsc -p tsconfig.unit.json"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.2",
+    "typescript": "^7.0.2"
+  }
+}
