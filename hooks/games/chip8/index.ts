@@ -112,34 +112,38 @@ export const chip8: Cartridge<Chip8State> = {
   view(state, size) {
     const cpu = state.cpu
     const lines: Line[] = []
-    // Full blocks two columns wide when there is room, else half blocks (two pixels per cell).
-    const big = size.columns >= WIDTH * 2 + 2 && size.rows >= HEIGHT + 2
-    const across = big ? WIDTH * 2 : WIDTH
+    // Full blocks two columns wide when there is room; else half blocks (2 pixels
+    // per cell); in a short pane, braille (2x4 pixels per cell).
+    const mode =
+      size.columns >= WIDTH * 2 + 2 && size.rows >= HEIGHT + 2
+        ? 'big'
+        : size.rows >= HEIGHT / 2 + 2 && size.columns >= WIDTH + 2
+          ? 'half'
+          : 'braille'
+    const across = mode === 'big' ? WIDTH * 2 : mode === 'half' ? WIDTH : WIDTH / 2
+    const down = mode === 'big' ? HEIGHT : mode === 'half' ? HEIGHT / 2 : HEIGHT / 4
     const border = '#30363d'
     lines.push([{ text: `┌${'─'.repeat(across)}┐`, color: border }])
     if (cpu) {
       const on = (x: number, y: number) => cpu.display[y * WIDTH + x] === 1
-      if (big) {
-        for (let y = 0; y < HEIGHT; y++) {
-          let row = ''
-          for (let x = 0; x < WIDTH; x++) row += on(x, y) ? '██' : '  '
-          lines.push(framed(row, border, state))
-        }
-      } else {
-        for (let y = 0; y < HEIGHT; y += 2) {
-          let row = ''
-          for (let x = 0; x < WIDTH; x++) {
-            const top = on(x, y)
-            const bottom = on(x, y + 1)
+      for (let cy = 0; cy < down; cy++) {
+        let row = ''
+        for (let cx = 0; cx < across; cx++) {
+          if (mode === 'big') {
+            row += on(cx >> 1, cy) ? '█' : ' '
+          } else if (mode === 'half') {
+            const top = on(cx, cy * 2)
+            const bottom = on(cx, cy * 2 + 1)
             row += top && bottom ? '█' : top ? '▀' : bottom ? '▄' : ' '
+          } else {
+            row += braille(on, cx * 2, cy * 4)
           }
-          lines.push(framed(row, border, state))
         }
+        lines.push(framed(row, border, state))
       }
     } else {
-      const rows = big ? HEIGHT : HEIGHT / 2
-      for (let y = 0; y < rows; y++) {
-        const text = y === Math.floor(rows / 2) ? center(state.error ?? '', across) : ' '.repeat(across)
+      for (let y = 0; y < down; y++) {
+        const text = y === Math.floor(down / 2) ? center(state.error ?? '', across) : ' '.repeat(across)
         lines.push(framed(text, border, state))
       }
     }
@@ -164,6 +168,23 @@ function framed(row: string, border: string, state: Chip8State): Line {
   if (state.background) screen.bg = state.background
 
   return [{ text: '│', color: border }, screen, { text: '│', color: border }]
+}
+
+/** Braille dot bits for the 2x4 pixels of one cell, by [x][y]. */
+const BRAILLE_DOTS = [
+  [0x01, 0x02, 0x04, 0x40],
+  [0x08, 0x10, 0x20, 0x80],
+]
+
+function braille(on: (x: number, y: number) => boolean, x: number, y: number): string {
+  let bits = 0
+  for (let dx = 0; dx < 2; dx++) {
+    for (let dy = 0; dy < 4; dy++) {
+      if (on(x + dx, y + dy)) bits |= BRAILLE_DOTS[dx]![dy]!
+    }
+  }
+  // An empty cell is a space, not U+2800, so the background shows evenly.
+  return bits === 0 ? ' ' : String.fromCharCode(0x2800 + bits)
 }
 
 function center(text: string, width: number): string {

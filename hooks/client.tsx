@@ -43,6 +43,8 @@ type View = { world: World; v: number }
 const FRAME_MS = 16
 /** Rows the harness draws around a cartridge's lines: header, status, help. */
 const CHROME_ROWS = 3
+/** Below this many rows the help line is dropped to give the game one more. */
+const ROOMY_ROWS = 22
 
 export default function Arcade(props: Props, surface: ClientSurface<View>) {
   let view = surface.state
@@ -90,7 +92,12 @@ function size(surface: ClientSurface<View>): Size {
   const columns = surface.columns > 0 ? surface.columns : 80
   const rows = surface.rows > 0 ? surface.rows : 26
 
-  return { columns, rows: Math.max(8, rows - CHROME_ROWS) }
+  return { columns, rows: Math.max(8, rows - chromeRows(rows)) }
+}
+
+/** Header and status always; the help line only when there is room for it. */
+function chromeRows(rows: number): number {
+  return rows >= ROOMY_ROWS ? CHROME_ROWS : CHROME_ROWS - 1
 }
 
 function normalize(event: ClientKeyEvent): Key {
@@ -280,7 +287,7 @@ function draw(world: World, surface: ClientSurface<View>) {
 
   let frame: Frame
   if (world.screen === 'menu') {
-    frame = menuFrame(world)
+    frame = menuFrame(world, room)
   } else if (world.error) {
     frame = { lines: [[{ text: world.error, color: '#ff7b72' }]], status: 'The game crashed.', help: 'backspace menu' }
   } else {
@@ -306,9 +313,11 @@ function draw(world: World, surface: ClientSurface<View>) {
       </Box>
       {frame.lines.slice(0, room.rows).map(line => drawLine(Text, line))}
       <Text wrap="truncate">{frame.status}</Text>
-      <Text dimColor wrap="truncate">
-        {frame.help}
-      </Text>
+      {chromeRows(surface.rows) === CHROME_ROWS && (
+        <Text dimColor wrap="truncate">
+          {frame.help}
+        </Text>
+      )}
     </Box>
   )
 }
@@ -354,23 +363,37 @@ function merge(line: Line): Line {
   return out
 }
 
-function menuFrame(world: World): Frame {
+function menuFrame(world: World, room: Size): Frame {
   const items = menuItems(world)
-  const lines: Line[] = [[], [{ text: '  Pick a game:', bold: true }], []]
-  items.forEach((item, i) => {
+  const footer: Line[] = [
+    [],
+    [
+      {
+        text: items.some(item => item.rom)
+          ? '    Your own ROMs: /arcade load <path>, or drop .ch8 files in ~/.claude/arcade/roms'
+          : '    No CHIP-8 ROMs found. /arcade load <path> runs one.',
+        dim: true,
+      },
+    ],
+  ]
+  const header: Line[] = room.rows >= items.length + 5 ? [[], [{ text: '  Pick a game:', bold: true }], []] : []
+  // Show a window of the list that keeps the selection in view.
+  const room4items = Math.max(3, room.rows - header.length - (room.rows >= items.length + 5 ? footer.length : 0))
+  const first = Math.max(0, Math.min(world.menuIndex - Math.floor(room4items / 2), items.length - room4items))
+  const shown = items.slice(first, first + room4items)
+  const lines: Line[] = [...header]
+  shown.forEach((item, offset) => {
+    const i = first + offset
     const selected = i === world.menuIndex
+    const more = (offset === 0 && first > 0) || (offset === shown.length - 1 && first + shown.length < items.length)
     lines.push([
-      { text: selected ? '  ▸ ' : '    ', color: '#a371f7' },
+      { text: selected ? '  ▸ ' : more ? '  ⋮ ' : '    ', color: '#a371f7' },
       { text: `${String(i + 1).padStart(2)}. `, dim: !selected },
       { text: item.label.padEnd(28), bold: selected, color: selected ? '#e6edf3' : '#c9d1d9' },
       { text: item.blurb, dim: true },
     ])
   })
-  if (!items.some(item => item.rom)) {
-    lines.push([], [{ text: '    No CHIP-8 ROMs found. /arcade load <path> runs one.', dim: true }])
-  } else {
-    lines.push([], [{ text: '    Your own ROMs: /arcade load <path>, or drop .ch8 files in ~/.claude/arcade/roms', dim: true }])
-  }
+  if (room.rows >= items.length + 5) lines.push(...footer)
 
   return {
     lines,
