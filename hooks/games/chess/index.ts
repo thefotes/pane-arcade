@@ -1,6 +1,6 @@
 // Chess as a cartridge: you against Stockfish (when installed), a small
 // built-in engine (when not), or a friend at the same keyboard.
-import { type Cartridge, type HostRequest, type HostResponse, type Line, type Size, type Span, lineWidth } from '../cartridge'
+import { type Cartridge, type HostRequest, type HostResponse, type Line, type Pointer, type Size, type Span, lineWidth } from '../cartridge'
 import {
   type Move,
   type Outcome,
@@ -68,6 +68,8 @@ export type ChessState = {
   selected: number | null
   /** A pawn move waiting for the promotion piece. */
   promoting: Move[] | null
+  /** The square a mouse drag started on, while the button is down. */
+  dragFrom: number | null
   /** The engine request in flight, if any. */
   thinking: { id: string; ticks: number } | null
   game: number
@@ -147,6 +149,10 @@ export const chess: Cartridge<ChessState> = {
     }
   },
 
+  pointer(state, pointer, size) {
+    onPointer(state, pointer, size)
+  },
+
   tick(state) {
     const thinking = state.thinking
     if (!thinking) return false
@@ -212,6 +218,7 @@ function newGame(game: number, you: 'w' | 'b', mode: Mode, level: number, letter
     cursor: you === 'w' ? 12 : 52, // e2 / e7
     selected: null,
     promoting: null,
+    dragFrom: null,
     thinking: null,
     game,
     ply: 0,
@@ -306,12 +313,81 @@ function choose(state: ChessState) {
   play(state, moves[0]!)
 }
 
-function render(state: ChessState, size: Size) {
-  // Square size: 6x3 cells looks square; shrink when the pane is small.
+/** Square size for the room: 6x3 cells looks square; shrink when the pane is small. */
+function geometry(size: Size): { w: number; h: number } {
   const big = size.rows >= 26 && size.columns >= 6 * 8 + 3
   const medium = !big && size.rows >= 18 && size.columns >= 4 * 8 + 3
-  const w = big ? 6 : medium ? 4 : 3
-  const h = big ? 3 : medium ? 2 : 1
+
+  return { w: big ? 6 : medium ? 4 : 3, h: big ? 3 : medium ? 2 : 1 }
+}
+
+/** The clickable row under the board: promotion choices while promoting, else the game's actions. */
+function buttons(state: ChessState): { label: string; key: string; from: number; to: number }[] {
+  const actions = state.promoting
+    ? [
+        { label: '♛ Queen', key: 'q' },
+        { label: '♜ Rook', key: 'r' },
+        { label: '♝ Bishop', key: 'b' },
+        { label: '♞ Knight', key: 'n' },
+        { label: 'Cancel', key: 'x' },
+      ]
+    : [
+        { label: 'New game', key: 'n' },
+        { label: 'Undo', key: 'u' },
+        { label: 'Swap sides', key: 'c' },
+        { label: state.mode === 'friend' ? 'vs engine' : '2 players', key: 't' },
+        ...(state.mode === 'friend' ? [] : [{ label: 'Level', key: 'l' }]),
+      ]
+  let column = 2
+  return actions.map(action => {
+    const from = column
+    column += action.label.length + 2 + 2
+    return { ...action, from, to: from + action.label.length + 2 }
+  })
+}
+
+/** The square under a frame position, or null off the board. */
+function squareAt(state: ChessState, x: number, y: number, size: Size): number | null {
+  const { w, h } = geometry(size)
+  const col = Math.floor((x - 2) / w)
+  const row = Math.floor(y / h)
+  if (x < 2 || y < 0 || col > 7 || row > 7) return null
+  const flip = flipped(state)
+
+  return (flip ? row : 7 - row) * 8 + (flip ? 7 - col : col)
+}
+
+/** Click a piece then its target, or drag it there; click the buttons under the board. */
+function onPointer(state: ChessState, { type, x, y, button }: Pointer, size: Size) {
+  if (button === 'right') {
+    if (type === 'down') state.selected = null
+    return
+  }
+  const { h } = geometry(size)
+  if (type === 'down' && y === 8 * h + 1) {
+    const hit = buttons(state).find(b => x >= b.from && x < b.to)
+    if (hit) chess.key(state, { key: hit.key })
+    return
+  }
+  const sq = squareAt(state, x, y, size)
+  if (type === 'down') {
+    state.dragFrom = null
+    if (sq === null || state.promoting) return
+    state.cursor = sq
+    choose(state)
+    if (state.selected === sq) state.dragFrom = sq
+  } else if (type === 'up') {
+    const from = state.dragFrom
+    state.dragFrom = null
+    if (from !== null && sq !== null && sq !== from && state.selected === from) {
+      state.cursor = sq
+      choose(state)
+    }
+  }
+}
+
+function render(state: ChessState, size: Size) {
+  const { w, h } = geometry(size)
   const flip = flipped(state)
   const targets = new Set(
     state.selected === null ? [] : legalMoves(state.pos).filter(m => m.from === state.selected).map(m => m.to),
@@ -339,18 +415,27 @@ function render(state: ChessState, size: Size) {
     return f.padStart(Math.ceil(w / 2)).padEnd(w)
   }).join('')
   board.push([{ text: `  ${fileRow}`, color: COLORS.dim }])
+  const row: Line = []
+  let column = 0
+  for (const b of buttons(state)) {
+    row.push({ text: ' '.repeat(b.from - column) })
+    row.push({ text: ` ${b.label} `, color: '#e6edf3', bg: state.promoting ? '#6e40c9' : '#30363d' })
+    column = b.to
+  }
+  board.push(row)
 
   // Move list beside the board when there is room.
-  const boardWidth = 2 + 8 * w
+  const boardWidth = Math.max(...board.map(lineWidth))
   const side = sidePanel(state, board.length)
   const sideWidth = Math.max(...side.map(lineWidth))
   const lines: Line[] =
     size.columns >= boardWidth + 4 + 22
       ? board.map((line, i) => {
           const panel = side[i] ?? []
-          return [...line, { text: '    ' }, ...panel, { text: ' '.repeat(sideWidth - lineWidth(panel)) }]
+          const pad = ' '.repeat(Math.max(0, boardWidth - lineWidth(line)))
+          return [...line, { text: `${pad}    ` }, ...panel, { text: ' '.repeat(sideWidth - lineWidth(panel)) }]
         })
-      : board
+      : board.map(line => [...line, { text: ' '.repeat(Math.max(0, boardWidth - lineWidth(line))) }])
 
   return { lines, status: status(state), help: help(state) }
 }
@@ -429,6 +514,6 @@ function status(state: ChessState): string {
 }
 
 function help(state: ChessState): string {
-  if (state.promoting) return 'q/r/b/n choose · x cancel'
-  return 'arrows/wasd move · space pick/drop · u undo · n new · c swap sides · l level · t 2-player · g letters'
+  if (state.promoting) return 'click a piece below, or q/r/b/n · x cancel'
+  return 'click a piece, then where it goes (or drag it) · arrows/wasd + space work too · g letters'
 }

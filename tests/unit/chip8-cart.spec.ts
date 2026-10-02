@@ -106,16 +106,21 @@ describe('chip8 cartridge', () => {
     }
   })
 
-  test('view sizes: big mode 34 lines / width 130, small mode 18 lines / width 66', () => {
+  test('view sizes: the screen, then the on-screen pad when it fits', () => {
     const rom = new Uint8Array([0x12, 0x00])
     const state = init({ rom })
+    // Big: 32 + 2 border lines, then a blank line and the 4x4 pad.
     const big = chip8.view(state, BIG)
-    expect(big.lines.length).toBe(34)
-    for (const line of big.lines) expect(lineWidth(line)).toBe(130)
+    expect(big.lines.length).toBe(34 + 5)
+    for (const line of big.lines.slice(0, 34)) expect(lineWidth(line)).toBe(130)
 
+    // 80x24: the 18-line half-block screen and the pad just fit.
     const small = chip8.view(state, SMALL)
-    expect(small.lines.length).toBe(18)
-    for (const line of small.lines) expect(lineWidth(line)).toBe(66)
+    expect(small.lines.length).toBe(18 + 5)
+    for (const line of small.lines.slice(0, 18)) expect(lineWidth(line)).toBe(66)
+
+    // 80x20: no room for the pad, so it is left out.
+    expect(chip8.view(state, { columns: 80, rows: 20 }).lines.length).toBe(18)
   })
 
   test('half-block glyphs: top only -> ▀, both -> █, bottom only -> ▄', () => {
@@ -207,5 +212,44 @@ describe('chip8 cartridge in a short pane', () => {
     expect(screen.color).toBe(colors.fill)
     expect(screen.bg).toBe(colors.background)
     expect(frame.status).toContain('Keys 7 and 9 slide.')
+  })
+})
+
+describe('chip8 on-screen buttons and number keys', () => {
+  // Jump to self: the machine idles while we poke its keys.
+  const rom = new Uint8Array([0x12, 0x00])
+  const ROOM: Size = { columns: 100, rows: 30 }
+  const howto = 'Keys 7 and 9 slide the paddle. Clear the bricks.'
+
+  test('number keys press the pad key of the same digit', () => {
+    const state = chip8.init({ seed: 1, size: ROOM, rom })
+    chip8.key(state, { key: '7' })
+    expect(state.cpu!.keys[7]).toBe(true)
+    chip8.key(state, { key: '4' })
+    expect(state.cpu!.keys[4]).toBe(true)
+  })
+
+  test('the buttons are the keys the how-to names, held while the mouse is down', () => {
+    const state = chip8.init({ seed: 1, size: ROOM, rom, romOptions: { howto } })
+    const frame = chip8.view(state, ROOM)
+    const text = frame.lines.map(line => line.map(span => span.text).join(''))
+    const row = text.findIndex(line => line.includes('◀ 7'))
+    expect(row).toBeGreaterThan(17)
+    expect(text[row]).toContain('▶ 9')
+    expect(text[row]).not.toContain(' 5 ')
+
+    const x = text[row]!.indexOf('◀ 7')
+    chip8.pointer!(state, { type: 'down', x, y: row, button: 'left' }, ROOM)
+    expect(state.cpu!.keys[7]).toBe(true)
+    for (let i = 0; i < 60; i++) chip8.tick!(state)
+    expect(state.cpu!.keys[7]).toBe(true)
+    chip8.pointer!(state, { type: 'up', x: -5, y: -5, button: 'left' }, ROOM)
+    expect(state.cpu!.keys[7]).toBe(false)
+  })
+
+  test('a click beside the buttons presses nothing', () => {
+    const state = chip8.init({ seed: 1, size: ROOM, rom, romOptions: { howto } })
+    chip8.pointer!(state, { type: 'down', x: 99, y: 19, button: 'left' }, ROOM)
+    expect(state.cpu!.keys.some(Boolean)).toBe(false)
   })
 })

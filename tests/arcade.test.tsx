@@ -41,7 +41,7 @@ test('enter on the menu starts a game, backspace returns to the menu', async $ =
   expect(await ui.find({ text: /Mines \d+\s+Flags 0/, in: 'arcade' })).toBeDefined()
 
   await ui.key({ key: 'p', in: 'arcade' })
-  expect(await ui.find({ text: /paused/, in: 'arcade' })).toBeDefined()
+  expect(await ui.find({ text: /resume/, in: 'arcade' })).toBeDefined()
 
   await ui.key({ key: 'backspace', in: 'arcade' })
   expect(await ui.find({ text: /Pick a game/, in: 'arcade' })).toBeDefined()
@@ -96,5 +96,20 @@ test('on the main screen, keys typed into the play field reach the game', async 
 test('the fullscreen layout draws no play field', async $ => {
   const ui = await $.ui.mount({ ...PANE, surface: 'terminal', viewport: { columns: 110, rows: 34, isFullscreen: true } })
   expect(await ui.find({ type: 'Input' })).toBeUndefined()
+  await ui.unmount()
+})
+
+test('in fullscreen the mouse picks games and works the header buttons', async $ => {
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal', viewport: { columns: 110, rows: 34, isFullscreen: true } })
+  await ui.resize({ columns: 110, rows: 34, in: 'arcade' })
+  // Row 0 is the header, rows 1-3 the menu's heading, row 4 the first game.
+  await ui.pointer({ type: 'down', x: 10, y: 5, button: 'left', in: 'arcade' })
+  await ui.pointer({ type: 'up', x: 10, y: 5, button: 'left', in: 'arcade' })
+  expect(await ui.find({ text: /Mines \d+\s+Flags 0/, in: 'arcade' })).toBeDefined()
+
+  // "ARCADE › Minesweeper" then two spaces, then the "‹ menu" button.
+  const menuButton = 'ARCADE › Minesweeper'.length + 3
+  await ui.pointer({ type: 'down', x: menuButton, y: 0, button: 'left', in: 'arcade' })
+  expect(await ui.find({ text: /Pick a game/, in: 'arcade' })).toBeDefined()
   await ui.unmount()
 })

@@ -168,7 +168,7 @@ describe('g2048', () => {
       expect(lineWidth(line)).toBe(31)
     }
     expect(frame.status.startsWith('Score 0  Best 0')).toBe(true)
-    expect(frame.help).toBe('arrows/wasd/hjkl slide \u00b7 u undo \u00b7 r restart')
+    expect(frame.help).toContain('drag with the mouse')
   })
 
   test('view: compact layout fits in 4 lines', () => {
@@ -201,4 +201,22 @@ describe('g2048 directions', () => {
       expect(s.cells.every((v, i) => v === cells[i] || cells[i] === 0)).toBe(true)
     })
   }
+})
+
+describe('g2048 mouse swipes', () => {
+  const swipe = (s: G2048State, dx: number, dy: number) => {
+    g2048.pointer!(s, { type: 'down', x: 10, y: 5, button: 'left' }, { columns: 80, rows: 30 })
+    g2048.pointer!(s, { type: 'up', x: 10 + dx, y: 5 + dy, button: 'left' }, { columns: 80, rows: 30 })
+  }
+
+  test('a drag slides the way it went; a click does nothing', () => {
+    const s = g2048.init({ seed: 1, size: { columns: 80, rows: 30 } })
+    s.cells = [0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    swipe(s, 0, 0)
+    expect(s.cells.filter(Boolean)).toHaveLength(1)
+    swipe(s, -12, 1)
+    expect(s.cells[0]).toBe(2)
+    swipe(s, 1, 4)
+    expect(s.cells[12]).toBe(2)
+  })
 })

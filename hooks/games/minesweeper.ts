@@ -1,4 +1,4 @@
-import { type Cartridge, type Frame, type InitContext, type Key, type Line, type Size, rng } from './cartridge'
+import { type Cartridge, type Frame, type InitContext, type Key, type Line, type Pointer, type Size, rng } from './cartridge'
 
 type Cell = { mine: boolean; revealed: boolean; flagged: boolean; count: number }
 
@@ -261,6 +261,29 @@ export const minesweeper: Cartridge<MinesweeperState> = {
     }
   },
 
+  pointer(state: MinesweeperState, pointer: Pointer, _size: Size): void {
+    if (pointer.type !== 'down') return
+    const cellX = Math.floor((pointer.x - 1) / 3)
+    const cellY = pointer.y - 1
+    if (!inBounds(state, cellX, cellY)) return
+    const button = pointer.button ?? 'left'
+    if (state.lost || state.won) {
+      if (button === 'left') newGame(state, state.difficulty, state.size)
+      return
+    }
+    state.cursorX = cellX
+    state.cursorY = cellY
+    if (button === 'left') {
+      revealCell(state, cellX, cellY)
+    } else if (button === 'right') {
+      const cell = state.cells[idx(state, cellX, cellY)]!
+      if (!cell.revealed) cell.flagged = !cell.flagged
+    } else if (button === 'middle') {
+      const cell = state.cells[idx(state, cellX, cellY)]!
+      if (cell.revealed) revealCell(state, cellX, cellY)
+    }
+  },
+
   tick(state: MinesweeperState): boolean {
     if (!state.placed || state.lost || state.won || state.seconds >= 999) return false
     state.seconds++
@@ -330,7 +353,7 @@ export const minesweeper: Cartridge<MinesweeperState> = {
     return {
       lines,
       status,
-      help: 'arrows/hjkl move · space reveal · f flag · 1/2/3 size · r restart',
+      help: 'click reveal · right-click flag · arrows/hjkl move · space reveal · f flag · 1/2/3 size · r restart',
     }
   },
 }

@@ -18,6 +18,19 @@ export type Key = {
   meta?: boolean
 }
 
+/**
+ * A mouse event over the play area (fullscreen layout only): `x` is the column
+ * and `y` the index into `Frame.lines` of the last `view`, both from 0. After a
+ * `down` every `move` and the `up` arrive, even outside the area (negative or
+ * past the edges), so a held on-screen button always gets its release.
+ */
+export type Pointer = {
+  type: 'down' | 'move' | 'up'
+  x: number
+  y: number
+  button?: 'left' | 'middle' | 'right'
+}
+
 /** A run of text drawn with one style. Colors are `#rrggbb` hex strings. */
 export type Span = {
   text: string
@@ -118,6 +131,8 @@ export interface Cartridge<S> {
   init(ctx: InitContext): S
   /** Handle one key. The harness keeps `p` (pause) and `backspace` (menu) for itself. */
   key(state: S, key: Key): void
+  /** Handle the mouse, in `view` coordinates for the given size. */
+  pointer?(state: S, pointer: Pointer, size: Size): void
   /** Advance one step. Return `false` when nothing visible changed (the harness skips the redraw). */
   tick?(state: S): boolean | void
   view(state: S, size: Size): Frame

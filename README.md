@@ -35,24 +35,27 @@ For chess against Stockfish, install it so it is on your `PATH` (`brew install s
 
 `/arcade` works mid-turn, so you can start a game while Claude is busy.
 
-**Giving the game the keyboard.** In Claude Code's fullscreen layout (`CLAUDE_CODE_NO_FLICKER=1`), the arcade docks
-beside the transcript: click the game and it takes every key, arrows included. On the classic main-screen layout
-nothing can click the game, so the pane opens with a focused *play* field under it and forwards what you type
-(`ctrl+x tab` moves focus between the prompt and the pane). Arrow keys don't reach a text field, so every game also
-plays with letters (WASD/HJKL). `Esc` always hands the keys back to the prompt.
+**Play with the mouse: use the fullscreen renderer.** Run `/tui fullscreen` once (it restarts and resumes your
+session; `CLAUDE_CODE_NO_FLICKER=1` does the same for one launch). The arcade then docks beside the transcript and
+the mouse works everywhere: click a game in the menu, click cells in Minesweeper (right-click flags), click a piece
+and then its square in chess (or drag it), drag to slide in 2048, and press and hold the on-screen buttons under a
+CHIP-8 game. Clicking the game also gives it the keyboard, arrows included; `Esc` hands the keys back to Claude.
+The header's `‹ menu` and `❚❚ pause` buttons work in every game.
 
-The main-screen pane is short, so the arcade adapts: the menu scrolls, the help line is dropped, chess uses a
-compact board and CHIP-8 switches to braille (2×4 pixels per character).
+**On the classic renderer** a terminal can't send the mouse or arrow keys to a mod, so the pane shows a focused
+*play* field under the game and forwards what you type: letters (WASD/HJKL), digits, space and enter. The pane is
+short there, so the menu scrolls, chess uses a compact board and CHIP-8 switches to braille (2×4 pixels per
+character).
 
 In every game `p` pauses and `backspace` returns to the menu.
 
 | Game | Controls |
 | --- | --- |
 | Snake | arrows / WASD turn · `r` restart |
-| Minesweeper | arrows / HJKL move · `space` reveal (on a number: chord) · `f` flag · `1`/`2`/`3` board size · `r` restart |
-| 2048 | arrows / WASD / HJKL slide · `u` undo · `r` restart · `c` dismiss the 2048 message and keep going |
-| Chess | arrows / WASD move the cursor · `space` pick up / put down · `u` undo · `n` new game · `c` swap sides · `l` engine level · `t` two-player · `g` letters instead of piece glyphs |
-| CHIP-8 | the 16-key pad is `1234` / `qwer` / `asdf` / `zxcv` · arrows = 5/7/8/9 · `space`/`enter` = 6 |
+| Minesweeper | click to reveal, right-click to flag · arrows / HJKL move · `space` reveal (on a number: chord) · `f` flag · `1`/`2`/`3` board size · `r` restart |
+| 2048 | drag with the mouse, or arrows / WASD / HJKL, to slide · `u` undo · `r` restart · `c` dismiss the 2048 message and keep going |
+| Chess | click a piece then its square, or drag it · buttons under the board for new game, undo, swap sides, two players, level · keys: arrows / WASD + `space`, `u` `n` `c` `t` `l`, `g` letters instead of piece glyphs |
+| CHIP-8 | press and hold the on-screen buttons (the keys the game's instructions name, or the whole pad) · number keys are the pad's digits, so "keys 7 and 9" means 7 and 9 · arrows = 5/7/8/9 · `space`/`enter` = 6 · the pad's A–F are on `z`/`c`/`r`/`f`/`v` and `4` is also `q` |
 
 ### Your own CHIP-8 ROMs
 

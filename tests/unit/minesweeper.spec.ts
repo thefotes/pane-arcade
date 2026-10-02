@@ -187,4 +187,84 @@ describe('minesweeper', () => {
     expect(frame.status).toContain('Time 000')
     expect(frame.status).toContain('Beginner')
   })
+
+  test('help line mentions mouse controls', () => {
+    const state = minesweeper.init({ seed: 29, size: { columns: 40, rows: 15 } })
+    const frame = minesweeper.view(state, { columns: 40, rows: 15 })
+    expect(frame.help).toBe(
+      'click reveal · right-click flag · arrows/hjkl move · space reveal · f flag · 1/2/3 size · r restart',
+    )
+  })
+
+  describe('pointer', () => {
+    function click(state: MinesweeperState, x: number, y: number, button?: 'left' | 'middle' | 'right'): void {
+      minesweeper.pointer!(state, { type: 'down', x, y, button }, { columns: 40, rows: 15 })
+    }
+
+    test('left click on cell (2, 3) moves the cursor there and reveals it safely', () => {
+      const state = minesweeper.init({ seed: 31, size: { columns: 40, rows: 15 } })
+      // Frame coordinates: cell column 2 -> x = 1 + 2*3 = 7; cell row 3 -> y = 4.
+      click(state, 7, 4)
+      expect(state.cursorX).toBe(2)
+      expect(state.cursorY).toBe(3)
+      expect(state.lost).toBe(false)
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          expect(cellAt(state, 2 + dx, 3 + dy).revealed).toBe(true)
+        }
+      }
+    })
+
+    test('right click toggles flag; left click on a flagged cell does nothing', () => {
+      const state = minesweeper.init({ seed: 37, size: { columns: 40, rows: 15 } })
+      click(state, 1, 1, 'right')
+      expect(cellAt(state, 0, 0).flagged).toBe(true)
+      expect(state.cursorX).toBe(0)
+      expect(state.cursorY).toBe(0)
+      click(state, 1, 1, 'right')
+      expect(cellAt(state, 0, 0).flagged).toBe(false)
+      click(state, 1, 1, 'right')
+      click(state, 1, 1)
+      expect(cellAt(state, 0, 0).flagged).toBe(true)
+      expect(cellAt(state, 0, 0).revealed).toBe(false)
+      expect(state.lost).toBe(false)
+    })
+
+    test('clicks on the border and outside the board do nothing', () => {
+      const state = minesweeper.init({ seed: 41, size: { columns: 40, rows: 15 } })
+      const before = { cursorX: state.cursorX, cursorY: state.cursorY }
+      click(state, 0, 4)
+      click(state, 20, 0)
+      click(state, 20, 11)
+      click(state, 40, 5)
+      click(state, 7, -1)
+      click(state, -3, 5)
+      expect(state.cursorX).toBe(before.cursorX)
+      expect(state.cursorY).toBe(before.cursorY)
+      expect(state.cells.every((c) => !c.revealed && !c.flagged)).toBe(true)
+    })
+
+    test('after losing, a left click restarts', () => {
+      const state = minesweeper.init({ seed: 43, size: { columns: 40, rows: 15 } })
+      revealAt(state, 0, 0)
+      const target = state.cells.findIndex((c) => !c.revealed && !c.flagged)
+      state.cells[target]!.mine = true
+      revealAt(state, target % state.w, Math.floor(target / state.w))
+      expect(state.lost).toBe(true)
+      click(state, 7, 4)
+      expect(state.lost).toBe(false)
+      expect(state.placed).toBe(false)
+      expect(state.cells.every((c) => !c.revealed && !c.flagged)).toBe(true)
+      expect(state.seconds).toBe(0)
+    })
+
+    test('move and up events change nothing', () => {
+      const state = minesweeper.init({ seed: 47, size: { columns: 40, rows: 15 } })
+      minesweeper.pointer!(state, { type: 'move', x: 7, y: 4 }, { columns: 40, rows: 15 })
+      minesweeper.pointer!(state, { type: 'up', x: 7, y: 4 }, { columns: 40, rows: 15 })
+      expect(state.cursorX).not.toBe(2)
+      expect(state.cursorY).not.toBe(3)
+      expect(state.cells.every((c) => !c.revealed && !c.flagged)).toBe(true)
+    })
+  })
 })

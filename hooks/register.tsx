@@ -38,8 +38,8 @@ export const register: Register = on => {
 
   on('command.run', { command: 'arcade' }, async ($, e) => {
     const hint = e.presentation?.isFullscreen
-      ? 'Click the game to give it the keyboard; Esc hands it back.'
-      : 'Type into the play field under the game (ctrl+x tab focuses the pane); Esc hands the keys back.'
+      ? 'Click the game to play with the mouse and arrow keys; Esc hands the keys back to Claude.'
+      : 'For mouse and arrow keys, switch to the fullscreen renderer with /tui fullscreen (it restarts and resumes this session). Until then, type into the play field under the game.'
     const [verb = '', ...rest] = e.args.trim().split(/\s+/).filter(Boolean)
     const arg = rest.join(' ')
     const word = verb.toLowerCase()
@@ -121,6 +121,7 @@ export const register: Register = on => {
       response: await read($, response),
       roms: (await read($, roms)).map(r => ({ name: r.name, title: r.title ?? r.name })),
       keys: await read($, keys),
+      fullscreen: e.viewport?.isFullscreen === true,
     }
     // In the fullscreen layout a click gives the game the keyboard (arrows too).
     // On the main screen nothing can click it, so a field forwards typed keys.

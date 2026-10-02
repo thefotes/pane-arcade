@@ -2,7 +2,7 @@
 // cartridge, takes keys, keeps time with the frame clock and draws. It has no
 // `$`; anything that needs the host (ROM files, Stockfish) is posted to the
 // hooks module, whose answers come back as props.
-import type { ClientKeyEvent, ClientSurface } from 'claude-code'
+import type { ClientKeyEvent, ClientPointerEvent, ClientSurface } from 'claude-code'
 
 import type { Cartridge, Frame, HostRequest, HostResponse, Key, Line, RomOptions, Size } from './games/cartridge'
 import { CARTRIDGES } from './games/index'
@@ -14,7 +14,12 @@ type Props = {
   roms: { name: string; title: string }[]
   /** Keys typed into the pane's key field, for surfaces where the Client cannot take the keyboard. */
   keys: { seq: number; key: string }[]
+  /** True in Claude Code's fullscreen renderer, where a click gives the game the mouse and keyboard. */
+  fullscreen: boolean
 }
+
+/** A clickable span of the header row, by column. */
+type HeaderButton = { from: number; to: number; action: 'menu' | 'pause' }
 
 type MenuItem = { label: string; blurb: string; game: string; rom?: string }
 
@@ -33,6 +38,9 @@ type World = {
   postedId: string | null
   frames: number
   error: string | null
+  /** For each menu line drawn, the item it shows (undefined for other lines). */
+  menuRows: (number | undefined)[]
+  headerButtons: HeaderButton[]
   props: Props
   post: (data: { type: 'host'; request: HostRequest } | { type: 'rom'; name: string }) => void
 }
@@ -61,6 +69,8 @@ export default function Arcade(props: Props, surface: ClientSurface<View>) {
       postedId: null,
       frames: 0,
       error: null,
+      menuRows: [],
+      headerButtons: [],
       props,
       post: data => surface.post(data),
     }
@@ -68,6 +78,11 @@ export default function Arcade(props: Props, surface: ClientSurface<View>) {
     const redraw = () => surface.setState({ world, v: ++version })
     surface.onKey(key => {
       if (onKey(world, normalize(key), size(surface))) {
+        redraw()
+      }
+    })
+    surface.onPointer(event => {
+      if (onPointer(world, event, size(surface))) {
         redraw()
       }
     })
@@ -247,6 +262,40 @@ function menuKey(world: World, key: Key, room: Size): boolean {
   }
 }
 
+/**
+ * Handles the mouse (fullscreen renderer only): the header's buttons, a click on
+ * a menu item, and everything over the play area goes to the cartridge, in the
+ * coordinates of its frame (the header is row 0, the frame's first line row 1).
+ */
+function onPointer(world: World, event: ClientPointerEvent, room: Size): boolean {
+  if (event.type === 'enter' || event.type === 'leave') return false
+  const down = event.type === 'down'
+  if (down && event.y === 0) {
+    const button = world.headerButtons.find(b => event.x >= b.from && event.x < b.to)
+    if (button?.action === 'menu') world.screen = 'menu'
+    if (button?.action === 'pause') world.paused = !world.paused
+    return button !== undefined
+  }
+  if (world.screen === 'menu') {
+    const index = down && event.button !== 'right' ? world.menuRows[event.y - 1] : undefined
+    if (index === undefined) return false
+    world.menuIndex = index
+    return menuKey(world, { key: 'return' }, room)
+  }
+  const cart = world.cart
+  if (!cart?.pointer || world.error || (world.paused && event.type !== 'up')) return false
+  const pointer: Parameters<NonNullable<Cartridge<unknown>['pointer']>>[1] = {
+    type: event.type,
+    x: event.x,
+    y: event.y - 1,
+  }
+  if (event.button) pointer.button = event.button
+  guard(world, () => cart.pointer?.(world.game, pointer, room))
+  postPending(world)
+
+  return event.type !== 'move' || pointer.button !== undefined
+}
+
 /** Advances the running cartridge on the frame clock; true when it changed. */
 function onFrame(world: World): boolean {
   world.frames += 1
@@ -309,14 +358,37 @@ function draw(world: World, surface: ClientSurface<View>) {
   }
 
   const title = world.screen === 'menu' ? 'ARCADE' : `ARCADE › ${world.title}`
-  const paused = world.screen === 'game' && world.paused ? '  ❚❚ paused (p)' : ''
+  // Clickable header buttons in a game; their columns are recorded for onPointer.
+  const buttons: { label: string; action: HeaderButton['action'] }[] =
+    world.screen === 'game'
+      ? [
+          { label: '‹ menu', action: 'menu' },
+          { label: world.paused ? '▶ resume' : '❚❚ pause', action: 'pause' },
+        ]
+      : []
+  world.headerButtons = []
+  let column = title.length
+  for (const button of buttons) {
+    column += 2
+    world.headerButtons.push({ from: column, to: column + button.label.length + 2, action: button.action })
+    column += button.label.length + 2
+  }
 
   return (
     <Box flexDirection="column" width="100%">
       <Box flexDirection="row" justifyContent="space-between" paddingRight={2}>
-        <Text bold color="#a371f7" wrap="truncate">
-          {title}
-          {paused}
+        <Text wrap="truncate">
+          <Text bold color="#a371f7">
+            {title}
+          </Text>
+          {buttons.map(button => (
+            <Text>
+              {'  '}
+              <Text color="#e6edf3" backgroundColor="#30363d">
+                {` ${button.label} `}
+              </Text>
+            </Text>
+          ))}
         </Text>
         <Text color={claude.color} wrap="truncate">
           {claude.text}
@@ -395,8 +467,10 @@ function menuFrame(world: World, room: Size): Frame {
   const first = Math.max(0, Math.min(world.menuIndex - Math.floor(room4items / 2), items.length - room4items))
   const shown = items.slice(first, first + room4items)
   const lines: Line[] = [...header]
+  world.menuRows = header.map(() => undefined)
   shown.forEach((item, offset) => {
     const i = first + offset
+    world.menuRows.push(i)
     const selected = i === world.menuIndex
     const more = (offset === 0 && first > 0) || (offset === shown.length - 1 && first + shown.length < items.length)
     lines.push([
@@ -410,7 +484,11 @@ function menuFrame(world: World, room: Size): Frame {
 
   return {
     lines,
-    status: 'Games run in this pane while Claude keeps working.',
-    help: 'arrows/jk choose · enter play · in a game: p pause · backspace menu · esc back to prompt',
+    status: world.props.fullscreen
+      ? 'Click a game to play. Click the game area for mouse and arrow keys; Esc hands keys back to Claude.'
+      : 'Tip: mouse and arrow keys need the fullscreen renderer. Type /tui fullscreen to switch.',
+    help: world.props.fullscreen
+      ? 'click or arrows + enter to choose · in a game: p pause · backspace menu · esc back to prompt'
+      : 'type j/k + enter in the play field to choose · in a game: p pause · backspace menu',
   }
 }

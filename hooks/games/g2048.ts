@@ -10,6 +10,8 @@ export type G2048State = {
   wonDismissed: boolean
   canUndo: boolean
   prev: { cells: number[]; score: number; won: boolean; wonDismissed: boolean } | null
+  /** Where a mouse swipe started, while the button is down. */
+  swipe: { x: number; y: number } | null
 }
 
 const SIZE = 4
@@ -243,6 +245,7 @@ export const g2048: Cartridge<G2048State> = {
       wonDismissed: false,
       canUndo: false,
       prev: null,
+      swipe: null,
     }
     restart(state)
     return state
@@ -273,6 +276,20 @@ export const g2048: Cartridge<G2048State> = {
     const dir = KEY_TO_DIR[key.key]
     if (dir === undefined) return
     move(state, dir)
+  },
+
+  pointer(state, { type, x, y }) {
+    // Swipe: press, drag in a direction, release. A cell is about twice as tall
+    // as it is wide, so rows count double when comparing the two.
+    if (type === 'down') {
+      state.swipe = { x, y }
+    } else if (type === 'up' && state.swipe) {
+      const dx = x - state.swipe.x
+      const dy = (y - state.swipe.y) * 2
+      state.swipe = null
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < 3 || state.over) return
+      move(state, Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : dy > 0 ? 'down' : 'up')
+    }
   },
 
   view(state: G2048State, size: Size): Frame {
@@ -316,7 +333,7 @@ export const g2048: Cartridge<G2048State> = {
     return {
       lines,
       status: `Score ${state.score}  Best ${state.best}${suffix}`,
-      help: 'arrows/wasd/hjkl slide \u00b7 u undo \u00b7 r restart',
+      help: 'drag with the mouse or use arrows/wasd/hjkl to slide \u00b7 u undo \u00b7 r restart',
     }
   },
 }

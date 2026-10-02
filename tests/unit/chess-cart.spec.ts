@@ -213,3 +213,34 @@ describe('chess cartridge', () => {
     expect(new Set(widths2).size).toBe(1)
   })
 })
+
+describe('chess with the mouse', () => {
+  const room: Size = { columns: 100, rows: 30 } // 6x3 squares; board columns start at x = 2
+  const at = (file: number, rankFromTop: number) => ({ x: 2 + file * 6 + 3, y: rankFromTop * 3 + 1 })
+  const click = (st: ReturnType<typeof chess.init>, p: { x: number; y: number }, type: 'down' | 'up' = 'down') =>
+    chess.pointer!(st, { type, ...p, button: 'left' }, room)
+
+  test('click a piece, then its target', () => {
+    const st = chess.init({ seed: 1, size: room })
+    click(st, at(4, 6)) // e2
+    expect(st.selected).toBe(12)
+    click(st, at(4, 4)) // e4
+    expect(st.san).toEqual(['e4'])
+  })
+
+  test('drag a piece onto its target', () => {
+    const st = chess.init({ seed: 1, size: room })
+    click(st, at(6, 7)) // g1
+    click(st, at(5, 5), 'up') // release on f3
+    expect(st.san).toEqual(['Nf3'])
+  })
+
+  test('the buttons under the board act like their keys', () => {
+    const st = chess.init({ seed: 1, size: room })
+    const text = chess.view(st, room).lines[25]!.map(span => span.text).join('')
+    const x = text.indexOf('2 players')
+    expect(x).toBeGreaterThan(0)
+    click(st, { x, y: 25 })
+    expect(st.mode).toBe('friend')
+  })
+})
