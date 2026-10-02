@@ -43,7 +43,9 @@ const BUTTON_WIDTH = 9
 const FIRST_HOLD_FRAMES = 14
 const REPEAT_HOLD_FRAMES = 6
 const DEFAULT_TICKRATE = 15
+/** The screen for ROMs with no palette of their own: green phosphor on black. */
 const PHOSPHOR = '#7ee787'
+const SCREEN = '#0d1117'
 
 export type Chip8State = {
   cpu: Chip8 | null
@@ -74,7 +76,7 @@ export const chip8: Cartridge<Chip8State> = {
       name: romName ?? 'no ROM',
       howto: romOptions?.howto ?? null,
       fill: romOptions?.colors?.fill ?? PHOSPHOR,
-      background: romOptions?.colors?.background,
+      background: romOptions?.colors?.background ?? SCREEN,
       tickrate: Math.max(1, Math.min(1000, romOptions?.tickrate ?? DEFAULT_TICKRATE)),
       hold: new Array<number>(16).fill(0),
       pressed: null,
@@ -149,7 +151,7 @@ export const chip8: Cartridge<Chip8State> = {
     const { mode, buttons, padLines } = layout(state, size)
     const across = mode === 'big' ? WIDTH * 2 : mode === 'half' ? WIDTH : WIDTH / 2
     const down = mode === 'big' ? HEIGHT : mode === 'half' ? HEIGHT / 2 : HEIGHT / 4
-    const border = '#30363d'
+    const border = 'subtle'
     lines.push([{ text: `┌${'─'.repeat(across)}┐`, color: border }])
     if (cpu) {
       const on = (x: number, y: number) => cpu.display[y * WIDTH + x] === 1
@@ -181,7 +183,7 @@ export const chip8: Cartridge<Chip8State> = {
       for (const b of buttons.filter(b => b.line === lines.length)) {
         line.push({ text: ' '.repeat(b.from - column) })
         const held = state.pressed === b.key || (cpu?.keys[b.key] ?? false)
-        line.push({ text: b.label, color: '#e6edf3', bg: held ? '#6e40c9' : '#30363d', bold: held })
+        line.push({ text: b.label, color: 'text', bg: held ? 'selectionBg' : 'userMessageBackground', bold: held })
         column = b.to
       }
       lines.push(line)

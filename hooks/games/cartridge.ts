@@ -31,7 +31,15 @@ export type Pointer = {
   button?: 'left' | 'middle' | 'right'
 }
 
-/** A run of text drawn with one style. Colors are `#rrggbb` hex strings. */
+/**
+ * A run of text drawn with one style. A color is a `#rrggbb` hex string or one of
+ * Claude Code's theme keys, which follow the person's light or dark theme:
+ * `text`, `inverseText`, `inactive`, `subtle`, `success`, `warning`, `error`,
+ * `suggestion`, `permission`, `claude`, `userMessageBackground`, `selectionBg`.
+ * Use a theme key for anything drawn on the pane's own background; a hex color
+ * only where the cartridge also paints the background behind it. A span with no
+ * color is drawn in `text`.
+ */
 export type Span = {
   text: string
   color?: string

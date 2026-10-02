@@ -180,7 +180,7 @@ export const snake: Cartridge<SnakeState> = {
   },
 
   view(state: SnakeState, _size: Size): Frame {
-    const borderDim = '#555555'
+    const borderDim = 'subtle'
     const top: Line = [{ text: '┌' + '─'.repeat(state.boardW * 2) + '┐', color: borderDim, dim: true }]
     const bottom: Line = [{ text: '└' + '─'.repeat(state.boardW * 2) + '┘', color: borderDim, dim: true }]
 
@@ -210,7 +210,7 @@ export const snake: Cartridge<SnakeState> = {
         let color: string | undefined
         if (isHead) {
           glyph = '██'
-          color = '#7ee787'
+          color = 'success'
         } else if (isBody) {
           glyph = '██'
           color = '#2ea043'
@@ -229,7 +229,7 @@ export const snake: Cartridge<SnakeState> = {
           const col = overlayCol + i
           if (col < rowChars.length) {
             rowChars[col] = overlayChars[i] as string
-            rowColors[col] = '#e6edf3'
+            rowColors[col] = 'text'
           }
         }
       }
@@ -239,7 +239,7 @@ export const snake: Cartridge<SnakeState> = {
         let end = start + 1
         const color = rowColors[start] as string | undefined
         while (end < rowChars.length && rowColors[end] === color) end++
-        line.push({ text: rowChars.slice(start, end).join(''), color, bold: color === '#7ee787' })
+        line.push({ text: rowChars.slice(start, end).join(''), color, bold: color === 'success' })
         start = end
       }
       line.push({ text: '│', color: borderDim, dim: true })

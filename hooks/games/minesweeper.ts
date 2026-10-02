@@ -190,8 +190,8 @@ const NUM_COLORS = [
   '#a371f7',
   '#d29922',
   '#39c5cf',
-  '#e6edf3',
-  '#8b949e',
+  'text',
+  'inactive',
 ]
 
 export const minesweeper: Cartridge<MinesweeperState> = {
@@ -291,7 +291,7 @@ export const minesweeper: Cartridge<MinesweeperState> = {
   },
 
   view(state: MinesweeperState, _size: Size): Frame {
-    const border = '#555555'
+    const border = 'subtle'
     const lines: Line[] = []
     const edge = '─'.repeat(state.w * 3)
     lines.push([{ text: '┌' + edge + '┐', color: border, dim: true }])
@@ -321,11 +321,11 @@ export const minesweeper: Cartridge<MinesweeperState> = {
           if (state.lost && !cell.mine) glyph = ' x '
         } else {
           glyph = ' ■ '
-          color = '#8b949e'
+          color = 'inactive'
         }
         let bg: string | undefined
         if (state.lost && cell.mine && idx(state, x, y) === state.hitIndex) bg = '#6e2020'
-        if (cursor) bg = '#30363d'
+        if (cursor) bg = 'selectionBg'
         for (const ch of glyph) {
           chars.push(ch)
           colors.push(color)

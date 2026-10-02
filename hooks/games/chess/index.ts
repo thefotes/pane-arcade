@@ -46,7 +46,7 @@ const COLORS = {
   white: '#ffffff',
   black: '#101010',
   check: '#c0392b',
-  dim: '#8b949e',
+  dim: 'inactive',
 }
 
 type Mode = 'stockfish' | 'builtin' | 'friend'
@@ -419,7 +419,7 @@ function render(state: ChessState, size: Size) {
   let column = 0
   for (const b of buttons(state)) {
     row.push({ text: ' '.repeat(b.from - column) })
-    row.push({ text: ` ${b.label} `, color: '#e6edf3', bg: state.promoting ? '#6e40c9' : '#30363d' })
+    row.push({ text: ` ${b.label} `, color: 'text', bg: state.promoting ? 'selectionBg' : 'userMessageBackground' })
     column = b.to
   }
   board.push(row)
@@ -492,7 +492,7 @@ function sidePanel(state: ChessState, rows: number): Line[] {
   }
   const room = Math.max(1, rows - panel.length)
   for (const pair of pairs.slice(-room)) {
-    panel.push([{ text: pair, color: '#c9d1d9' }])
+    panel.push([{ text: pair, color: 'text' }])
   }
 
   return panel

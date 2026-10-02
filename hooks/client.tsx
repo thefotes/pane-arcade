@@ -342,14 +342,14 @@ function draw(world: World, surface: ClientSurface<View>) {
   const room = size(surface)
   const busy = world.props.busy
   const claude = busy
-    ? { text: '● Claude is working', color: '#d29922' }
-    : { text: '◆ Claude is waiting for you', color: '#3fb950' }
+    ? { text: '● Claude is working', color: 'warning' }
+    : { text: '◆ Claude is waiting for you', color: 'success' }
 
   let frame: Frame
   if (world.screen === 'menu') {
     frame = menuFrame(world, room)
   } else if (world.error) {
-    frame = { lines: [[{ text: world.error, color: '#ff7b72' }]], status: 'The game crashed.', help: 'backspace menu' }
+    frame = { lines: [[{ text: world.error, color: 'error' }]], status: 'The game crashed.', help: 'backspace menu' }
   } else {
     frame = { lines: [], status: '', help: '' }
     guard(world, () => {
@@ -378,13 +378,13 @@ function draw(world: World, surface: ClientSurface<View>) {
     <Box flexDirection="column" width="100%">
       <Box flexDirection="row" justifyContent="space-between" paddingRight={2}>
         <Text wrap="truncate">
-          <Text bold color="#a371f7">
+          <Text bold color="claude">
             {title}
           </Text>
           {buttons.map(button => (
             <Text>
               {'  '}
-              <Text color="#e6edf3" backgroundColor="#30363d">
+              <Text color="text" backgroundColor="userMessageBackground">
                 {` ${button.label} `}
               </Text>
             </Text>
@@ -395,7 +395,9 @@ function draw(world: World, surface: ClientSurface<View>) {
         </Text>
       </Box>
       {frame.lines.slice(0, room.rows).map(line => drawLine(Text, line))}
-      <Text wrap="truncate">{frame.status}</Text>
+      <Text color="text" wrap="truncate">
+        {frame.status}
+      </Text>
       {chromeRows(surface.rows) === CHROME_ROWS && (
         <Text dimColor wrap="truncate">
           {frame.help}
@@ -413,8 +415,9 @@ function drawLine(Text: ClientSurface['elements']['Text'], line: Line) {
   return (
     <Text wrap="truncate">
       {merge(line).map(span => {
-        const style: Record<string, string | boolean> = {}
-        if (span.color) style.color = span.color
+        // Unstyled text takes the theme's text color, never the terminal's own
+        // default, which can be light on a light theme's pane.
+        const style: Record<string, string | boolean> = { color: span.color ?? 'text' }
         if (span.bg) style.backgroundColor = span.bg
         if (span.bold) style.bold = true
         if (span.dim) style.dimColor = true
@@ -474,9 +477,9 @@ function menuFrame(world: World, room: Size): Frame {
     const selected = i === world.menuIndex
     const more = (offset === 0 && first > 0) || (offset === shown.length - 1 && first + shown.length < items.length)
     lines.push([
-      { text: selected ? '  ▸ ' : more ? '  ⋮ ' : '    ', color: '#a371f7' },
+      { text: selected ? '  ▸ ' : more ? '  ⋮ ' : '    ', color: 'claude' },
       { text: `${String(i + 1).padStart(2)}. `, dim: !selected },
-      { text: item.label.padEnd(28), bold: selected, color: selected ? '#e6edf3' : '#c9d1d9' },
+      { text: item.label.padEnd(28), bold: selected, color: selected ? 'suggestion' : 'text' },
       { text: item.blurb, dim: true },
     ])
   })
